@@ -17,6 +17,26 @@ poetry config virtualenvs.in-project true
 
 ```
 
+# Run-time
+
+```shell
+# Put your token in the .env or export to env variable
+DB_PATH="sql/chat_requests.db"
+OPENAI_API_KEY=your_openai_api_key_here
+CLAUDE_API_KEY=your_claude_api_key_here
+LLAMA_API_URL=your_llama_api_url_here
+
+# Start the FastAPI application using Uvicorn with auto-reload enabled for development
+uvicorn src.main:app --reload
+
+# Run the test-connection script to check API connections and validate the API token
+# This script can help ensure that the API is reachable and correctly secured
+sh src/test-connection.sh
+
+```
+
+
+
 # Data model
 
 ---
