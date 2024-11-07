@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "adversarial-attacks-on-llm"
+version = "0.1.0"
+description = "LLM attack framework"
+authors = ["WEIWENLAN <weiwenlan1999@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+openai = "^0.27.0"    # You can specify a specific version or a range of versions
+requests = "^2.31.0"
+aiohttp = "^3.8.0"
+uvicorn = "^0.32.0"
+fastapi = "^0.115.4"
+fastchat = "^0.1.0"
+psutil = "^6.1.0"
+python-dotenv = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
