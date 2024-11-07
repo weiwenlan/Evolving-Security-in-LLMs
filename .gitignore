@@ -1,0 +1,58 @@
+# macOS system files
+.DS_Store
+
+# Linux swap files
+*.swp
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# Log files
+*.log
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Environment configuration files
+.env
+.env.local
+.env.*.local
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Python virtual environments
+venv/
+.venv/
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Compiled files and temporary files
+*.out
+*.o
+*.a
+*.so
+*.exe
+
+# Build output directories
+dist/
+build/
+*.class
+target/
+
+# Backup and temp files
+*.bak
+*.tmp
+*.temp
+
+# databse file
+*.db

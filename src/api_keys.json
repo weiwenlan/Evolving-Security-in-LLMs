@@ -1,0 +1,5 @@
+{
+    "OPENAI_API_KEY": "your_openai_api_key_here",
+    "CLAUDE_API_KEY": "your_claude_api_key_here",
+    "LLAMA_API_URL": "http://your_llama_api_url_here"
+}
