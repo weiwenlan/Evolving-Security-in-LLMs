@@ -21,12 +21,13 @@ def create_tables():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS chat_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            model TEXT NOT NULL,
-            actual_text TEXT NOT NULL,
+            model_name TEXT NOT NULL,
+            prompt_input TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
             response TEXT,
-            model_used TEXT,
-            completed_at TEXT
+            method_used TEXT,
+            method_category TEXT,
+            answer_category TEXT
         )
     """)
     
@@ -34,9 +35,9 @@ def create_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Attacks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            category TEXT,
-            description TEXT
+            paper_name TEXT NOT NULL,
+            attack_category TEXT,
+            attack_prompt TEXT
         )
     ''')
 
@@ -50,13 +51,13 @@ def create_tables():
         )
     ''')
 
-    # Create Models table
+    # Create Models table (includes API configuration parameters)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Models (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            parameters TEXT,
-            provider TEXT
+            model_name TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            parameters TEXT
         )
     ''')
 

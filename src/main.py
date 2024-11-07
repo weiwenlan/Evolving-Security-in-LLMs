@@ -1,9 +1,9 @@
-import json
 import openai
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
+import anthropic
 # from fastchat.model import load_model
 
 # Load environment variables from .env file
@@ -34,29 +34,39 @@ async def chat(request: ChatRequest):
     temperature = request.temperature
 
     try:
-        if model == "openai":
+        if model in ["gpt-4o", "gpt-3.5-turbo"]:
             # Send request to OpenAI API
             if not OPENAI_API_KEY:
                 raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
             openai.api_key = OPENAI_API_KEY
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=prompt,
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=max_tokens,
                 temperature=temperature
             )
-            return {"response": response.choices[0].text.strip()}
+            return {"response": response.choices[0].message['content'].strip()}
 
-        elif model == "claude":
-            # Placeholder for sending request to Claude API (replace with actual API integration)
+        elif model == "claude-3-5-sonnet":
+            # Send request to Claude API using anthropic library
             if not CLAUDE_API_KEY:
                 raise HTTPException(status_code=500, detail="Claude API key not configured.")
-            # Example: Sending request to Claude's API
-            response = "[Claude response to be implemented]"
-            return {"response": response}
+            
+            client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+            response = client.completions.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens_to_sample=max_tokens,
+                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
+            )
+            return {"response": response['completion'].strip()}
 
         elif model == "llama":
             # Use FastChat to interact with LLaMA model
+            if 'llama_model' not in globals():
+                raise HTTPException(status_code=500, detail="LLaMA model not loaded.")
             response = llama_model.generate(
                 prompt,
                 max_tokens=max_tokens,
@@ -65,7 +75,7 @@ async def chat(request: ChatRequest):
             return {"response": response}
 
         else:
-            raise HTTPException(status_code=400, detail="Model not supported. Use 'openai', 'claude', or 'llama'.")
+            raise HTTPException(status_code=400, detail="Model not supported. Use 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-5-sonnet', or 'llama'.")
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
