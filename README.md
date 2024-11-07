@@ -1,7 +1,7 @@
 # Adversarial-Attacks-on-LLM
 
 # Architect
-![[image/architect.png]]
+![Architect](image/architect.png)
 
 # Pre-Project 
 
