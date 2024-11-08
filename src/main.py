@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 import anthropic
-# from fastchat.model import load_model
+import google.generativeai as genai
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,7 +12,11 @@ load_dotenv()
 # Load API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-LLAMA_API_URL = os.getenv("LLAMA_API_URL")
+XAI_API_KEY = os.getenv("XAI_API_KEY")
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
+# Configure Google Generative AI
+genai.configure(api_key=GOOGLE_API_KEY)
 
 app = FastAPI()
 
@@ -22,9 +26,6 @@ class ChatRequest(BaseModel):
     prompt: str
     max_tokens: int = 150
     temperature: float = 0.7
-
-# Load FastChat models (assuming they are available locally or accessible)
-# llama_model = load_model('llama')
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
@@ -63,19 +64,37 @@ async def chat(request: ChatRequest):
             )
             return {"response": response['completion'].strip()}
 
-        elif model == "llama":
-            # Use FastChat to interact with LLaMA model
-            if 'llama_model' not in globals():
-                raise HTTPException(status_code=500, detail="LLaMA model not loaded.")
-            response = llama_model.generate(
-                prompt,
+        elif model == "grok":
+            # Send request to Grok API using OpenAI library
+            if not XAI_API_KEY:
+                raise HTTPException(status_code=500, detail="XAI API key not configured.")
+            
+            client = openai.OpenAI(
+                api_key=XAI_API_KEY,
+                base_url="https://api.x.ai/v1",
+            )
+            response = client.ChatCompletion.create(
+                model="grok-beta",
+                messages=[
+                    {"role": "system", "content": "You are Grok, a chatbot inspired by the Hitchhikers Guide to the Galaxy."},
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=max_tokens,
                 temperature=temperature
             )
-            return {"response": response}
+            return {"response": response.choices[0].message['content'].strip()}
+
+        elif model == "gemini-1.5-flash":
+            # Send request to Google Generative AI
+            if not GOOGLE_API_KEY:
+                raise HTTPException(status_code=500, detail="Google API key not configured.")
+            
+            generative_model = genai.GenerativeModel('gemini-1.5-flash')
+            response = generative_model.generate_content(prompt)
+            return {"response": response.text.strip()}
 
         else:
-            raise HTTPException(status_code=400, detail="Model not supported. Use 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-5-sonnet', or 'llama'.")
+            raise HTTPException(status_code=400, detail="Model not supported. Use 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-5-sonnet', 'grok', or 'gemini-1.5-flash'.")
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
