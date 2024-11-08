@@ -27,7 +27,6 @@ class ChatRequest(BaseModel):
     model: str
     prompt: str
     max_tokens: int = 150
-    temperature: float = 0.7
 
 
 @app.post("/chat")
@@ -35,7 +34,6 @@ async def chat(request: ChatRequest):
     model = request.model.lower()
     prompt = request.prompt
     max_tokens = request.max_tokens
-    temperature = request.temperature
 
     try:
         if model in ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo"]:
@@ -51,11 +49,10 @@ async def chat(request: ChatRequest):
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=max_tokens,
-                temperature=temperature
             )
             return {"response": response.choices[0].message['content'].strip()}
 
-        elif model in ["claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229a", "claude-3-5-haiku-20241022", "claude-3-haiku-20240307", "claude-3-opus-latest"]:
+        elif model in ["claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229", "claude-3-5-haiku-20241022", "claude-3-haiku-20240307", "claude-3-opus-latest"]:
             # Send request to Claude API using anthropic library
             if not CLAUDE_API_KEY:
                 raise HTTPException(
@@ -70,7 +67,6 @@ async def chat(request: ChatRequest):
                 ],
             )
             return {"response": response.content[0].text}
-
 
         # elif model == "grok":
         #     # Send request to Grok API using OpenAI library
