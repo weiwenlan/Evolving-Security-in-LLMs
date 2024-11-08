@@ -21,11 +21,14 @@ genai.configure(api_key=GOOGLE_API_KEY)
 app = FastAPI()
 
 # Define a request model
+
+
 class ChatRequest(BaseModel):
     model: str
     prompt: str
     max_tokens: int = 150
     temperature: float = 0.7
+
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
@@ -35,10 +38,11 @@ async def chat(request: ChatRequest):
     temperature = request.temperature
 
     try:
-        if model in ["gpt-4o", "gpt-3.5-turbo"]:
+        if model in ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo"]:
             # Send request to OpenAI API
             if not OPENAI_API_KEY:
-                raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
+                raise HTTPException(
+                    status_code=500, detail="OpenAI API key not configured.")
             openai.api_key = OPENAI_API_KEY
             response = openai.ChatCompletion.create(
                 model=model,
@@ -51,51 +55,57 @@ async def chat(request: ChatRequest):
             )
             return {"response": response.choices[0].message['content'].strip()}
 
-        elif model == "claude-3-5-sonnet":
+        elif model in ["claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229a", "claude-3-5-haiku-20241022", "claude-3-haiku-20240307", "claude-3-opus-latest"]:
             # Send request to Claude API using anthropic library
             if not CLAUDE_API_KEY:
-                raise HTTPException(status_code=500, detail="Claude API key not configured.")
-            
-            client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-            response = client.completions.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens_to_sample=max_tokens,
-                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
-            )
-            return {"response": response['completion'].strip()}
+                raise HTTPException(
+                    status_code=500, detail="Claude API key not configured.")
 
-        elif model == "grok":
-            # Send request to Grok API using OpenAI library
-            if not XAI_API_KEY:
-                raise HTTPException(status_code=500, detail="XAI API key not configured.")
-            
-            client = openai.OpenAI(
-                api_key=XAI_API_KEY,
-                base_url="https://api.x.ai/v1",
-            )
-            response = client.ChatCompletion.create(
-                model="grok-beta",
+            client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+            response = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
                 messages=[
-                    {"role": "system", "content": "You are Grok, a chatbot inspired by the Hitchhikers Guide to the Galaxy."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=max_tokens,
-                temperature=temperature
             )
-            return {"response": response.choices[0].message['content'].strip()}
+            return {"response": response.content[0].text}
 
-        elif model == "gemini-1.5-flash":
+
+        # elif model == "grok":
+        #     # Send request to Grok API using OpenAI library
+        #     if not XAI_API_KEY:
+        #         raise HTTPException(status_code=500, detail="XAI API key not configured.")
+
+        #     client = openai.OpenAI(
+        #         api_key=XAI_API_KEY,
+        #         base_url="https://api.x.ai/v1",
+        #     )
+        #     response = client.ChatCompletion.create(
+        #         model="grok-beta",
+        #         messages=[
+        #             {"role": "system", "content": "You are Grok, a chatbot inspired by the Hitchhikers Guide to the Galaxy."},
+        #             {"role": "user", "content": prompt}
+        #         ],
+        #         max_tokens=max_tokens,
+        #         temperature=temperature
+        #     )
+        #     return {"response": response.choices[0].message['content'].strip()}
+
+        elif model in ["gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]:
             # Send request to Google Generative AI
             if not GOOGLE_API_KEY:
-                raise HTTPException(status_code=500, detail="Google API key not configured.")
-            
-            generative_model = genai.GenerativeModel('gemini-1.5-flash')
+                raise HTTPException(
+                    status_code=500, detail="Google API key not configured.")
+
+            generative_model = genai.GenerativeModel(model)
             response = generative_model.generate_content(prompt)
             return {"response": response.text.strip()}
 
         else:
-            raise HTTPException(status_code=400, detail="Model not supported. Use 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-5-sonnet', 'grok', or 'gemini-1.5-flash'.")
-    
+            raise HTTPException(
+                status_code=400, detail="Model not supported. Use 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-5-sonnet', 'grok', or 'gemini-1.5-flash'.")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
