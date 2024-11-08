@@ -24,7 +24,8 @@ poetry config virtualenvs.in-project true
 DB_PATH="sql/chat_requests.db"
 OPENAI_API_KEY=your_openai_api_key_here
 CLAUDE_API_KEY=your_claude_api_key_here
-LLAMA_API_URL=your_llama_api_url_here
+XAI_API_KEY=your_xai_api_url_here
+GOOGLE_API_KEY=your_google_api_url_here
 
 # Start the FastAPI application using Uvicorn with auto-reload enabled for development
 uvicorn src.main:app --reload
