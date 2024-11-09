@@ -47,7 +47,15 @@ sh src/test-connection.sh
 
 ```
 
+# SQLite View
+- https://inloop.github.io/sqlite-viewer/
 
+# Model being tested
+//TODO 把模型都提出来
+Error with model gemini-1.5-pro-001: Error in API request: 500 - {"detail":"429 Resource has been exhausted (e.g. check quota)."}
+// claude 需要ratelimiter
+Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Error code: 529 - {'type': 'error', 'error': {'type': 'overloaded_error', 'message': 'Overloaded'}}"}
+- remove temperature from code
 
 # Data model
 
