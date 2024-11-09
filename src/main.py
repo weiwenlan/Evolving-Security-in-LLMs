@@ -26,7 +26,7 @@ app = FastAPI()
 class ChatRequest(BaseModel):
     model: str
     prompt: str
-    max_tokens: int = 150
+    max_tokens: int = 512
 
 
 @app.post("/chat")

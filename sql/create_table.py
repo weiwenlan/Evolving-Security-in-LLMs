@@ -9,14 +9,21 @@ load_dotenv()
 db_path = os.getenv("DB_PATH")
 
 # Establish a connection to the database
+
+
 def get_connection():
     return sqlite3.connect(db_path)
+
+
+model_names = ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo", "claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229", "claude-3-5-haiku-20241022",
+               "claude-3-haiku-20240307", "claude-3-opus-latest", "gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]
+
 
 # Create all necessary tables
 def create_tables():
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     # Create chat_requests table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS chat_requests (
@@ -30,7 +37,7 @@ def create_tables():
             answer_category TEXT
         )
     """)
-    
+
     # Create Attacks table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Attacks (
@@ -53,11 +60,9 @@ def create_tables():
 
     # Create Models table (includes API configuration parameters)
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Models (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            model_name TEXT NOT NULL,
-            endpoint TEXT NOT NULL,
-            parameters TEXT
+    CREATE TABLE IF NOT EXISTS Models (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model_name TEXT NOT NULL
         )
     ''')
 
@@ -90,8 +95,13 @@ def create_tables():
         )
     ''')
 
+    cursor.executemany('''
+        INSERT INTO Models (model_name) VALUES (?)
+    ''', [(model_name,) for model_name in model_names])
+
     conn.commit()
     conn.close()
+
 
 if __name__ == "__main__":
     create_tables()
