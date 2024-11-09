@@ -23,14 +23,14 @@ def create_connection(db_path):
 # Function to get pending chat requests from the database
 def get_pending_requests(conn):
     cursor = conn.cursor()
-    cursor.execute("SELECT id, model_name, prompt FROM pending_requests WHERE status = 'pending'")
+    cursor.execute("SELECT id, model_name, prompt_input FROM chat_requests WHERE status = 'pending'")
     return cursor.fetchall()
 
 # Function to update the status and response of a chat request
-def update_request_status(conn, request_id, response, model_name):
+def update_request_status(conn, request_id, response):
     cursor = conn.cursor()
-    cursor.execute("UPDATE pending_requests SET status = ?, response = ?, model_used = ?, completed_at = ? WHERE id = ?", 
-                   ('completed', response, model_name, time.strftime('%Y-%m-%d %H:%M:%S'), request_id))
+    cursor.execute("UPDATE chat_requests SET status = ?, response = ? WHERE id = ?", 
+                   ('completed', response, request_id))
     conn.commit()
 
 # Function to send requests to the FastAPI chat endpoint
@@ -63,7 +63,7 @@ def process_pending_requests():
         request_id, model_name, prompt = request
         try:
             response = send_chat_request(endpoint, model_name, prompt)
-            update_request_status(conn, request_id, response, model_name)
+            update_request_status(conn, request_id, response)
             print(f"Processed request ID {request_id} successfully.")
         except Exception as e:
             print(f"Failed to process request ID {request_id}: {str(e)}")

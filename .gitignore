@@ -53,3 +53,6 @@ target/
 *.bak
 *.tmp
 *.temp
+
+# db
+.db
