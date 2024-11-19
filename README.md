@@ -1,16 +1,17 @@
 # Adversarial-Attacks-on-LLM
 
 # Architect
+
 ![Architect](image/architect.png)
 
-# Pre-Project 
+# Pre-Project
 
 ```shell
 # Install all dependencies specified in pyproject.toml
 poetry install
 
 # Activate the virtual environment created by Poetry
-poetry shell 
+poetry shell
 
 # Configure Poetry to create the virtual environment within the project directory
 poetry config virtualenvs.in-project true
@@ -48,16 +49,30 @@ sh src/test-connection.sh
 ```
 
 # SQLite View
+
 - https://inloop.github.io/sqlite-viewer/
 
 # Model being tested
+
 //TODO 把模型都提出来
 Error with model gemini-1.5-pro-001: Error in API request: 500 - {"detail":"429 Resource has been exhausted (e.g. check quota)."}
-// claude 需要ratelimiter
+// claude 需要 ratelimiter
 Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Error code: 529 - {'type': 'error', 'error': {'type': 'overloaded_error', 'message': 'Overloaded'}}"}
+
 - remove temperature from code
 
 # Data model
+
+## Version Control
+
+```shell
+# Export table to CSV
+sqlite3 attacks.db -header -csv "SELECT * FROM Attacks;" > attacks_data.csv
+
+# Export entire database to an SQL file
+sqlite3 attacks.db .dump > attacks_backup.sql
+
+```
 
 ---
 
@@ -65,16 +80,16 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于存储聊天请求信息，包括模型名称、提示输入、状态、响应以及相关方法的类别信息。
 
-| 字段名            | 数据类型 | 描述                                                     |
-|-------------------|----------|----------------------------------------------------------|
-| `id`              | INTEGER  | 主键，自增                                               |
-| `model_name`      | TEXT     | 模型名称，引用 `Models` 表中的 `model_name`              |
-| `prompt_input`    | TEXT     | 要发送的 `prompt` 内容                                   |
-| `status`          | TEXT     | 请求的状态（如 `pending`, `completed`）                  |
-| `response`        | TEXT     | 模型的回复                                               |
-| `method_used`     | TEXT     | 方法名称，引用 `Attacks` 表中的 `paper_name`             |
-| `method_category` | TEXT     | 方法类别，引用 `Attacks` 表中的 `attack_category`        |
-| `answer_category` | TEXT     | 模型回复的类别（如 `good`, `bad`）                       |
+| 字段名            | 数据类型 | 描述                                              |
+| ----------------- | -------- | ------------------------------------------------- |
+| `id`              | INTEGER  | 主键，自增                                        |
+| `model_name`      | TEXT     | 模型名称，引用 `Models` 表中的 `model_name`       |
+| `prompt_input`    | TEXT     | 要发送的 `prompt` 内容                            |
+| `status`          | TEXT     | 请求的状态（如 `pending`, `completed`）           |
+| `response`        | TEXT     | 模型的回复                                        |
+| `method_used`     | TEXT     | 方法名称，引用 `Attacks` 表中的 `paper_name`      |
+| `method_category` | TEXT     | 方法类别，引用 `Attacks` 表中的 `attack_category` |
+| `answer_category` | TEXT     | 模型回复的类别（如 `good`, `bad`）                |
 
 ---
 
@@ -82,12 +97,12 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于存储攻击方法的信息，`attack_prompt` 字段将作为 `prompt_input`，`paper_name` 用于 `method_used`，`attack_category` 用于 `method_category`。
 
-| 字段名            | 数据类型 | 描述                                                     |
-|-------------------|----------|----------------------------------------------------------|
-| `id`              | INTEGER  | 主键，自增                                               |
-| `paper_name`      | TEXT     | 方法的名称，作为 `method_used`                            |
-| `attack_category` | TEXT     | 方法的类别，作为 `method_category`                        |
-| `attack_prompt`   | TEXT     | 要作为 `prompt_input` 的内容                              |
+| 字段名            | 数据类型 | 描述                               |
+| ----------------- | -------- | ---------------------------------- |
+| `id`              | INTEGER  | 主键，自增                         |
+| `paper_name`      | TEXT     | 方法的名称，作为 `method_used`     |
+| `attack_category` | TEXT     | 方法的类别，作为 `method_category` |
+| `attack_prompt`   | TEXT     | 要作为 `prompt_input` 的内容       |
 
 ---
 
@@ -95,12 +110,12 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于存储防御方法的信息，每条记录描述一种防御措施。
 
-| 字段名            | 数据类型 | 描述                                                     |
-|-------------------|----------|----------------------------------------------------------|
-| `id`              | INTEGER  | 主键，自增                                               |
-| `name`            | TEXT     | 防御方法的名称                                           |
-| `category`        | TEXT     | 防御方法的类别（如 `Self-Processing`, `Additional Helper`）|
-| `description`     | TEXT     | 防御方法的详细描述                                       |
+| 字段名        | 数据类型 | 描述                                                        |
+| ------------- | -------- | ----------------------------------------------------------- |
+| `id`          | INTEGER  | 主键，自增                                                  |
+| `name`        | TEXT     | 防御方法的名称                                              |
+| `category`    | TEXT     | 防御方法的类别（如 `Self-Processing`, `Additional Helper`） |
+| `description` | TEXT     | 防御方法的详细描述                                          |
 
 ---
 
@@ -108,12 +123,12 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于存储模型的信息，包括名称、API 端点和参数。`model_name` 与 `chat_requests` 表的 `model_name` 一致。
 
-| 字段名          | 数据类型 | 描述                                                     |
-|-----------------|----------|----------------------------------------------------------|
-| `id`            | INTEGER  | 主键，自增                                               |
-| `model_name`    | TEXT     | 模型名称，引用 `chat_requests` 表中的 `model_name`       |
-| `endpoint`      | TEXT     | 模型的 API 端点                                          |
-| `parameters`    | TEXT     | 模型参数（如 `temperature`、`max_tokens` 等）             |
+| 字段名       | 数据类型 | 描述                                               |
+| ------------ | -------- | -------------------------------------------------- |
+| `id`         | INTEGER  | 主键，自增                                         |
+| `model_name` | TEXT     | 模型名称，引用 `chat_requests` 表中的 `model_name` |
+| `endpoint`   | TEXT     | 模型的 API 端点                                    |
+| `parameters` | TEXT     | 模型参数（如 `temperature`、`max_tokens` 等）      |
 
 ---
 
@@ -121,16 +136,16 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于记录每次实验的详细信息，包含模型、攻击方法和防御方法的组合以及实验的成功率和效率。
 
-| 字段名          | 数据类型 | 描述                                                     |
-|-----------------|----------|----------------------------------------------------------|
-| `id`            | INTEGER  | 主键，自增                                               |
-| `model_id`      | INTEGER  | 模型的 ID，引用 `Models` 表                               |
-| `attack_id`     | INTEGER  | 攻击方法的 ID，引用 `Attacks` 表                          |
-| `defense_id`    | INTEGER  | 防御方法的 ID，引用 `Defenses` 表                         |
-| `success_rate`  | REAL     | 攻击的成功率                                             |
-| `efficiency`    | REAL     | 效率分数                                                 |
-| `date`          | TEXT     | 实验日期                                                 |
-| `notes`         | TEXT     | 实验的备注                                               |
+| 字段名         | 数据类型 | 描述                              |
+| -------------- | -------- | --------------------------------- |
+| `id`           | INTEGER  | 主键，自增                        |
+| `model_id`     | INTEGER  | 模型的 ID，引用 `Models` 表       |
+| `attack_id`    | INTEGER  | 攻击方法的 ID，引用 `Attacks` 表  |
+| `defense_id`   | INTEGER  | 防御方法的 ID，引用 `Defenses` 表 |
+| `success_rate` | REAL     | 攻击的成功率                      |
+| `efficiency`   | REAL     | 效率分数                          |
+| `date`         | TEXT     | 实验日期                          |
+| `notes`        | TEXT     | 实验的备注                        |
 
 ---
 
@@ -138,12 +153,12 @@ Error with model claude-3-opus-latest: Error in API request: 500 - {"detail":"Er
 
 此表用于存储实验的具体结果细节，每条记录描述实验的某一类别和成功情况。
 
-| 字段名          | 数据类型 | 描述                                                     |
-|-----------------|----------|----------------------------------------------------------|
-| `id`            | INTEGER  | 主键，自增                                               |
-| `experiment_id` | INTEGER  | 实验的 ID，引用 `Experiments` 表                          |
-| `category`      | TEXT     | 实验结果的类别（如 `harmful_content`, `adult_content`）   |
-| `success`       | BOOLEAN  | 是否成功                                                 |
-| `count`         | INTEGER  | 成功案例的数量                                           |
+| 字段名          | 数据类型 | 描述                                                    |
+| --------------- | -------- | ------------------------------------------------------- |
+| `id`            | INTEGER  | 主键，自增                                              |
+| `experiment_id` | INTEGER  | 实验的 ID，引用 `Experiments` 表                        |
+| `category`      | TEXT     | 实验结果的类别（如 `harmful_content`, `adult_content`） |
+| `success`       | BOOLEAN  | 是否成功                                                |
+| `count`         | INTEGER  | 成功案例的数量                                          |
 
 ---
