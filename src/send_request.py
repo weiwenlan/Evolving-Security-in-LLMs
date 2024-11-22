@@ -4,12 +4,14 @@ import json
 import time
 import os
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Get configuration values from environment variables
 db_path = os.getenv("DB_PATH")
+chat_endpoint = os.getenv("CHAT_ENDPOINT")
 
 # Create a database connection
 def create_connection(db_path):
@@ -17,7 +19,7 @@ def create_connection(db_path):
     try:
         conn = sqlite3.connect(db_path)
     except sqlite3.Error as e:
-        print(e)
+        print(f"Error connecting to database: {e}")
     return conn
 
 # Function to get pending chat requests from the database
@@ -27,10 +29,19 @@ def get_pending_requests(conn):
     return cursor.fetchall()
 
 # Function to update the status and response of a chat request
-def update_request_status(conn, request_id, response):
+def update_request_status(conn, request_id, status, response=None):
+    """
+    Update the status and response of a chat request in the database.
+
+    Args:
+        conn: Database connection object.
+        request_id: ID of the request.
+        status: New status ('completed' or 'rejected').
+        response: Response message or error details.
+    """
     cursor = conn.cursor()
     cursor.execute("UPDATE chat_requests SET status = ?, response = ? WHERE id = ?", 
-                   ('completed', response, request_id))
+                   (status, response, request_id))
     conn.commit()
 
 # Function to send requests to the FastAPI chat endpoint
@@ -46,29 +57,61 @@ def send_chat_request(endpoint, model_name, prompt):
     if response.status_code == 200:
         return response.json().get("response")
     else:
-        raise Exception(f"Error in API request: {response.status_code} - {response.text}")
+        # Return error details instead of raising an exception
+        return {
+            "error_code": response.status_code,
+            "error_message": response.text
+        }
 
-# Main function to process pending requests
-def process_pending_requests():
+# Worker function to process a single request
+def process_request(endpoint, request, conn):
+    request_id, model_name, prompt = request
+    try:
+        result = send_chat_request(endpoint, model_name, prompt)
+        
+        if isinstance(result, dict) and "error_code" in result:
+            # Handle API error, update status to 'rejected'
+            error_message = f"Error {result['error_code']}: {result['error_message']}"
+            update_request_status(conn, request_id, 'rejected', error_message)
+            print(f"Rejected request ID {request_id}: {error_message}")
+        else:
+            # Handle successful response
+            update_request_status(conn, request_id, 'completed', result)
+            print(f"Processed request ID {request_id} successfully.")
+    except Exception as e:
+        # Handle unexpected errors, update status to 'rejected'
+        error_message = f"Unexpected error: {str(e)}"
+        update_request_status(conn, request_id, 'rejected', error_message)
+        print(f"Rejected request ID {request_id}: {error_message}")
+
+# Main function to process pending requests with multithreading
+def process_pending_requests_multithreaded():
     conn = create_connection(db_path)
     if conn is None:
         print("Error! Cannot create database connection.")
         return
 
-    # Hardcoded model endpoint for simplified use
-    endpoint = os.getenv("CHAT_ENDPOINT")
-
     pending_requests = get_pending_requests(conn)
-    for request in pending_requests:
-        request_id, model_name, prompt = request
-        try:
-            response = send_chat_request(endpoint, model_name, prompt)
-            update_request_status(conn, request_id, response)
-            print(f"Processed request ID {request_id} successfully.")
-        except Exception as e:
-            print(f"Failed to process request ID {request_id}: {str(e)}")
+    if not pending_requests:
+        print("No pending requests found.")
+        conn.close()
+        return
+
+    # ThreadPoolExecutor to process requests concurrently
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(process_request, chat_endpoint, request, conn) 
+            for request in pending_requests
+        ]
+
+        # Optionally, wait for all futures to complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # To handle exceptions raised by threads
+            except Exception as e:
+                print(f"Error during thread execution: {str(e)}")
 
     conn.close()
 
 if __name__ == "__main__":
-    process_pending_requests()
+    process_pending_requests_multithreaded()

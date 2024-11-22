@@ -9,9 +9,15 @@ load_dotenv()
 db_path = os.getenv("DB_PATH")
 
 # Establish a connection to the database
-
-
 def get_connection():
+    # Ensure the directory for the database file exists
+    if db_path and not os.path.exists(os.path.dirname(db_path)):
+        os.makedirs(os.path.dirname(db_path))
+    
+    # If the database file does not exist, it will be created automatically
+    if not os.path.exists(db_path):
+        open(db_path, 'w').close()  # Create an empty file
+    
     return sqlite3.connect(db_path)
 
 
