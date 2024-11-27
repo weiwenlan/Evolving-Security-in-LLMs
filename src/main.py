@@ -6,6 +6,7 @@ import os
 import anthropic
 import google.generativeai as genai
 from ratelimit import limits, sleep_and_retry
+from huggingface_hub import InferenceClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,6 +15,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Configure Google Generative AI
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -24,11 +26,12 @@ RATE_LIMIT_PERIOD = 5  # period in seconds
 
 app = FastAPI()
 
-# Define a request model
+
 class ChatRequest(BaseModel):
     model: str
     prompt: str
     max_tokens: int = 512
+
 
 @sleep_and_retry
 @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
@@ -48,9 +51,10 @@ def send_claude_request(model, prompt, max_tokens):
     )
     return response.content[0].text
 
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    model = request.model.lower()
+    model = request.model
     prompt = request.prompt
     max_tokens = request.max_tokens
 
@@ -84,6 +88,21 @@ async def chat(request: ChatRequest):
             generative_model = genai.GenerativeModel(model)
             response = generative_model.generate_content(prompt)
             return {"response": response.text.strip()}
+
+        elif model in ["meta-llama/Llama-3.2-3B-Instruct"]:
+            client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
+            messages = [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens
+            )
+            return completion.choices[0].message.content
 
         else:
             raise HTTPException(
