@@ -3,7 +3,7 @@ import os
 
 def get_attacks_from_db(db_path):
     if not os.path.exists(db_path):
-        raise FileNotFoundError(f"The database file 'attacks.db' does not exist in directory: {source_directory}")
+        raise FileNotFoundError(f"The database file 'attacks.db' does not exist in directory: {source_db_path}")
     
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -46,7 +46,7 @@ def inject_attacks_to_db(destination_db_path, attacks):
     conn.close()
 
 if __name__ == "__main__":
-    source_db_path = "../attack/jailbroken/attacks.db"  # Directory containing the source attacks.db
+    source_db_path = "../attack/jailbroken2/attacks.db"  # Directory containing the source attacks.db
     destination_db_path = "./chat_requests.db"  # Path to the destination database
 
     try:
