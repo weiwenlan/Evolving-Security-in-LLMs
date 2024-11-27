@@ -35,16 +35,17 @@ class ChatRequest(BaseModel):
 
 @sleep_and_retry
 @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-def send_claude_request(model, prompt, max_tokens):
+def send_claude_request(model, prompt, max_tokens, system_prompt):
     # Send request to Claude API using anthropic library
     if not CLAUDE_API_KEY:
         raise HTTPException(
             status_code=500, detail="Claude API key not configured.")
-
+    # https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
     response = client.messages.create(
         model=model,
         max_tokens=max_tokens,
+        system=system_prompt,
         messages=[
             {"role": "user", "content": prompt}
         ],
@@ -57,9 +58,11 @@ async def chat(request: ChatRequest):
     model = request.model
     prompt = request.prompt
     max_tokens = request.max_tokens
+    system_prompt = getattr(request, "system_prompt",
+                            "You are a helpful assistant.")
 
     try:
-        if model in ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo"]:
+        if model in ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo", "gpt-4o"]:
             # Send request to OpenAI API
             if not OPENAI_API_KEY:
                 raise HTTPException(
@@ -68,7 +71,7 @@ async def chat(request: ChatRequest):
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content":  system_prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=max_tokens,
@@ -77,7 +80,7 @@ async def chat(request: ChatRequest):
 
         elif model in ["claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229", "claude-3-5-haiku-20241022", "claude-3-haiku-20240307", "claude-3-opus-latest"]:
             # Send request to Claude API using anthropic library with rate limiting
-            return {"response": send_claude_request(model, prompt, max_tokens)}
+            return {"response": send_claude_request(model, prompt, max_tokens, system_prompt)}
 
         elif model in ["gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]:
             # Send request to Google Generative AI
@@ -85,7 +88,12 @@ async def chat(request: ChatRequest):
                 raise HTTPException(
                     status_code=500, detail="Google API key not configured.")
 
-            generative_model = genai.GenerativeModel(model)
+            generative_model = genai.GenerativeModel(
+                model_name=model,
+                system_instruction=[
+                    system_prompt,
+                ],
+            )
             response = generative_model.generate_content(prompt)
             return {"response": response.text.strip()}
 
