@@ -1,24 +1,20 @@
-from openai import OpenAI
+import openai
 import time
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 
 # for gpt
+
+
 def chatCompletion(model, messages, temperature, retry_times, round_sleep, fail_sleep, api_key, base_url=None):
-    if base_url is None:
-        client = OpenAI(
-            api_key=api_key
-            )
-    else:
-        client = OpenAI(
-        api_key=api_key,
-        base_url=base_url
-    )
+
+    openai.api_key = api_key
     try:
-        response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature
-            )
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            max_tokens=512,
+            temperature=temperature
+        )
     except Exception as e:
         print(e)
         for retry_time in range(retry_times):
@@ -26,9 +22,10 @@ def chatCompletion(model, messages, temperature, retry_times, round_sleep, fail_
             print(f"{model} Retry {retry_time}")
             time.sleep(fail_sleep)
             try:
-                response = client.chat.completions.create(
+                response = openai.ChatCompletion.create(
                     model=model,
                     messages=messages,
+                    max_tokens=512,
                     temperature=temperature
                 )
                 break
@@ -41,23 +38,19 @@ def chatCompletion(model, messages, temperature, retry_times, round_sleep, fail_
     return model_output
 
 # for claude
+
+
 def claudeCompletion(model, max_tokens, temperature, prompt, retry_times, round_sleep, fail_sleep, api_key, base_url=None):
-    if base_url is None:
-        client = Anthropic(
-            api_key=api_key
-            )
-    else:
-        client = Anthropic(
-            base_url=base_url,
-            auth_token=api_key
-            )   
+    client = Anthropic(api_key=api_key)
     try:
-        completion = client.completions.create(
+        response = client.messages.create(
             model=model,
-            max_tokens_to_sample=max_tokens,
+            max_tokens=max_tokens,
             temperature=temperature,
-            prompt=f"{HUMAN_PROMPT} {prompt}{AI_PROMPT}"
-            )
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+        )
     except Exception as e:
         print(e)
         for retry_time in range(retry_times):
@@ -65,17 +58,19 @@ def claudeCompletion(model, max_tokens, temperature, prompt, retry_times, round_
             print(f"{model} Retry {retry_time}")
             time.sleep(fail_sleep)
             try:
-                completion = client.completions.create(
-                model=model,
-                max_tokens_to_sample=max_tokens,
-                temperature=temperature,
-                prompt=prompt
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
                 )
                 break
             except:
                 continue
 
-    model_output = completion.completion.strip()
+    model_output = response.content[0].text
     time.sleep(round_sleep)
 
     return model_output

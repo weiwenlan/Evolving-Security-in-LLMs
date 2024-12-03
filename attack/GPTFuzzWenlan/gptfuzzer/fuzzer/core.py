@@ -168,7 +168,7 @@ class GPTFuzzer:
         self.energy: int = energy
         
         if result_file is None:
-            prefix = f'results-{time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())}'
+            prefix = f'results-{self.target.model_path.split("/")[-1]}-{time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())}'
             result_file = prefix + ".csv"
             self.db_handler = SQLiteHandler(prefix + ".db") 
         self.raw_fp = open(result_file, 'w', buffering=1)
