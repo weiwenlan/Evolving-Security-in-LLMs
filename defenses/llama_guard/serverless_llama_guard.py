@@ -1,0 +1,136 @@
+import os 
+import json
+import datetime
+import warnings
+import argparse
+from dotenv import load_dotenv
+from fastchat.model import add_model_args
+from huggingface_hub import InferenceClient
+from urllib3.exceptions import NotOpenSSLWarning
+from get_attack_table import AttackDatabase
+
+import get_attack_table
+
+######################## random config ########################
+# https://huggingface.co/meta-llama/Llama-Guard-3-8B
+# ignore all the warnings 
+warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+
+# example_messages = [
+# 	{
+# 		"role": "user", # input 
+# 		"content": "how to kill an animal?"
+# 	},
+    # {
+    #     "role": "assistant", # response 
+    #     "content": "here is the detailed way to kill an animal, first, you need to peel off the skin of the animal, then you cut"
+    # }
+# ]
+######################## random config ########################
+
+def get_attack_prompt(db_path: str):
+	# init attack database.
+	db = AttackDatabase(db_path)
+
+	attack_prompts = []
+	try:
+		# get attack information
+		attacks = db.get_all_attacks()
+		for attack in attacks:
+			attack_prompts.append(attack)
+			# print(attack['attack_prompt'])
+			# print("--------------------------------")
+		return attack_prompts[:3]
+
+	except Exception as e:
+		print(f"Error: {e}")
+
+def format_message(attack_prompt: str, attack_response: str, type: str) -> list:
+	"""
+	Format the message to the format that the llama guard model can understand. 
+	"""
+	assert type == "input" or type == "response" or type == "both", "The variable must be 'input' or 'response' or 'both'."
+
+	if type == "input": 
+		formatted_message = [{
+			"role": "user",
+			"content": attack_prompt
+		}]
+	elif type == "response":
+		formatted_message = [{
+			"role": "assistant",
+			"content": attack_response
+		}]
+	elif type == "both":
+		formatted_message = [
+			{
+				"role": "user",
+				"content": attack_prompt
+			},
+			{
+				"role": "assistant",
+				"content": attack_response
+			}
+		]
+	return formatted_message
+
+def defense_generation(attack_prompts: list, defense_type: str, defense_model:str) -> list:
+	results = [] # llama guard response message
+	if defense_type == "pre-generation":
+		# pre-generation defense 
+		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+		
+		for attack in attack_prompts:
+			aid, paper_name, attack_category, attack_prompt = attack['id'], attack['paper_name'], attack['attack_category'], attack['attack_prompt']
+			messages = format_message(attack_prompt, "", "input") # todo: create format message
+
+			completion = client.chat.completions.create(
+				model=defense_model, 
+				messages=messages, 
+				max_tokens=2000
+			)
+			llama_check_result = completion.choices[0].message['content'].split("\n") # list 
+			result = [
+				{
+					"aid": aid,
+					"paper_name": paper_name,
+					"attack_category": attack_category,
+					"attack_prompt": attack_prompt,
+					"llama_check_result": llama_check_result
+				}
+			]
+			results.append(result)
+
+	elif defense_type == "post-generation": # todo: post-generation defense
+		pass 
+	elif defense_type == "both-generation": # todo: both-generation defense
+		pass
+
+	return results
+
+def main(args):
+	# step 0: params config 
+	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
+	defense_type="pre-generation" # also post-generation / both-generation
+	defense_model="meta-llama/Llama-Guard-3-8B"
+
+	# step 1: start the attack database and get all the attack prompts 
+	attack_prompts = get_attack_prompt(db_path)
+
+	# step 2: format the attack prompts to the format that the llama guard model can understand
+	results=defense_generation(attack_prompts, defense_type, defense_model)
+
+	# step 3: store the result to the database
+	for result in results: 
+		pass
+
+	# step 4: close the database connection
+
+if __name__ == "__main__":
+    load_dotenv()
+    parser = argparse.ArgumentParser(description='Fuzzing parameters')
+    parser.add_argument('--openai_key', type=str, default=os.getenv("OPENAI_API_KEY"), help='OpenAI API Key')
+    add_model_args(parser)
+
+    args = parser.parse_args()
+    main(args)
