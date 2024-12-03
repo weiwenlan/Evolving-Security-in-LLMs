@@ -29,7 +29,6 @@ def send_chat_request(model_name, prompt):
         raise Exception(f"Error in API request: {
                         response.status_code} - {response.text}")
 
-
 # Record the response time for each model
 response_times = {}
 
