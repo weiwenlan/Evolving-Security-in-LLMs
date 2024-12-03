@@ -1,4 +1,5 @@
 
+from transformers import pipeline
 import openai
 import logging
 import time
@@ -22,12 +23,12 @@ class ClaudeLLM(LLM):
     def __init__(self,
                  model_path='claude-instant-1.2',
                  api_key=None
-                ):
+                 ):
         super().__init__()
-        
+
         if len(api_key) != 108:
             raise ValueError('invalid Claude API key')
-        
+
         self.model_path = model_path
         self.api_key = api_key
         self.anthropic = Anthropic(
@@ -35,7 +36,7 @@ class ClaudeLLM(LLM):
         )
 
     def generate(self, prompt, max_tokens=512, max_trials=1, failure_sleep_time=1):
-        
+
         for _ in range(max_trials):
             try:
                 completion = self.anthropic.completions.create(
@@ -50,7 +51,7 @@ class ClaudeLLM(LLM):
                 time.sleep(failure_sleep_time)
 
         return [" "]
-    
+
     def generate_batch(self, prompts, max_tokens=512, max_trials=1, failure_sleep_time=1):
         results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -60,12 +61,13 @@ class ClaudeLLM(LLM):
                 results.extend(future.result())
         return results
 
+
 class OpenAILLM(LLM):
     def __init__(self,
                  model_path,
                  api_key=None,
                  system_message=None
-                ):
+                 ):
         super().__init__()
 
         if model_path not in ['gpt-3.5-turbo', 'gpt-4']:
@@ -103,3 +105,41 @@ class OpenAILLM(LLM):
             for future in concurrent.futures.as_completed(futures):
                 results.extend(future.result())
         return results
+
+from huggingface_hub import InferenceClient
+
+
+class LlamaLLM(LLM):
+    def __init__(self, model_path, api_key, system_message=None):
+        super().__init__()
+
+        self.model_path = model_path
+        self.system_message = system_message if system_message is not None else "You are a helpful assistant."
+
+        # Initialize the text generation pipeline
+        try:
+            self.client = InferenceClient(api_key=api_key)
+        except Exception as e:
+            raise ValueError(f"Failed to load model {model_path}. Error: {e}")
+
+    def generate(self, prompt, temperature=0.7, max_tokens=512, max_trials=3, failure_sleep_time=5):
+        for attempt in range(max_trials):
+            try:
+                # Prepare the input message format
+                messages = [
+                    {"role": "system", "content": self.system_message},
+                    {"role": "user", "content": prompt},
+                ]
+
+                # Call the generation pipeline
+                response = self.client.chat.completions.create( 
+                    model=self.model_path,messages=messages, max_tokens=max_tokens, temperature=temperature)
+                # Assumes response contains 'generated_text'
+                return response.choices[0].message.content
+            except Exception as e:
+                logging.warning(f"Model generation failed: {
+                                e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # Return a default message if all retries fail
+        return "Failed to generate response."

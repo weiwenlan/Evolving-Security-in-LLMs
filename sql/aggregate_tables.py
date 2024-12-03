@@ -46,8 +46,8 @@ def inject_attacks_to_db(destination_db_path, attacks):
     conn.close()
 
 if __name__ == "__main__":
-    source_db_path = "../attack/jailbroken2/attacks.db"  # Directory containing the source attacks.db
-    destination_db_path = "./chat_requests.db"  # Path to the destination database
+    source_db_path = "attack/jailbroken2/attacks.db"  # Directory containing the source attacks.db
+    destination_db_path = "sql/chat_requests.db"  # Path to the destination database
 
     try:
         # Step 1: Extract data from the source database
