@@ -40,7 +40,7 @@ def get_attack_prompt(db_path: str):
 			attack_prompts.append(attack)
 			# print(attack['attack_prompt'])
 			# print("--------------------------------")
-		return attack_prompts[:3]
+		return attack_prompts
 
 	except Exception as e:
 		print(f"Error: {e}")
@@ -57,10 +57,16 @@ def format_message(attack_prompt: str, attack_response: str, type: str) -> list:
 			"content": attack_prompt
 		}]
 	elif type == "response":
-		formatted_message = [{
-			"role": "assistant",
-			"content": attack_response
-		}]
+		formatted_message = [
+			{
+				"role": "user",
+				"content": ""
+			},
+			{
+				"role": "assistant",
+				"content": attack_response
+			}
+		]
 	elif type == "both":
 		formatted_message = [
 			{
@@ -81,8 +87,8 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
 		
 		for attack in attack_prompts:
-			aid, paper_name, attack_category, attack_prompt = attack['id'], attack['paper_name'], attack['attack_category'], attack['attack_prompt']
-			messages = format_message(attack_prompt, "", "input") # todo: create format message
+			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
+			messages = format_message(prompt, "", "input")
 
 			completion = client.chat.completions.create(
 				model=defense_model, 
@@ -92,26 +98,59 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 			llama_check_result = completion.choices[0].message['content'].split("\n") # list 
 			result = [
 				{
-					"aid": aid,
-					"paper_name": paper_name,
-					"attack_category": attack_category,
-					"attack_prompt": attack_prompt,
+					"result": a_result,
+					"llama_check_result": llama_check_result
+				}
+			]
+			results.append(result)
+	elif defense_type == "post-generation":
+		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+		
+		for attack in attack_prompts:
+			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
+			messages = format_message("", response, "response")
+
+			completion = client.chat.completions.create(
+				model=defense_model, 
+				messages=messages, 
+				max_tokens=2000
+			)
+			llama_check_result = completion.choices[0].message['content'].split("\n")[2:] # list 
+			result = [
+				{
+					"result": a_result,
+					"llama_check_result": llama_check_result
+				}
+			]
+			results.append(result)
+	elif defense_type == "both-generation":
+		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+		
+		for attack in attack_prompts:
+			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
+			messages = format_message(prompt, response, "both")
+
+			completion = client.chat.completions.create(
+				model=defense_model, 
+				messages=messages, 
+				max_tokens=2000
+			)
+			llama_check_result = completion.choices[0].message['content'].split("\n")[2:] # list 
+			result = [
+				{
+					"result": a_result,
 					"llama_check_result": llama_check_result
 				}
 			]
 			results.append(result)
 
-	elif defense_type == "post-generation": # todo: post-generation defense
-		pass 
-	elif defense_type == "both-generation": # todo: both-generation defense
-		pass
-
 	return results
 
 def main(args):
 	# step 0: params config 
-	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
-	defense_type="pre-generation" # also post-generation / both-generation
+	# db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
+	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/GPTFuzzWenlan/results-Llama-3.2-1B-Instruct-2024-12-02-23-14-15.db"
+	defense_type="post-generation" # also post-generation / both-generation
 	defense_model="meta-llama/Llama-Guard-3-8B"
 
 	# step 1: start the attack database and get all the attack prompts 
@@ -122,7 +161,8 @@ def main(args):
 
 	# step 3: store the result to the database
 	for result in results: 
-		pass
+		print(result)
+		print("---------------------------------------------------")
 
 	# step 4: close the database connection
 
