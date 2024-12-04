@@ -40,7 +40,7 @@ def get_attack_prompt(db_path: str):
 			attack_prompts.append(attack)
 			# print(attack['attack_prompt'])
 			# print("--------------------------------")
-		return attack_prompts
+		return attack_prompts[:10]
 
 	except Exception as e:
 		print(f"Error: {e}")
@@ -127,8 +127,9 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
 		
 		for attack in attack_prompts:
-			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
-			messages = format_message(prompt, response, "both")
+			aid, model_name, prompt_input, status, response, method_used, method_category, answer_category, created_at = (
+				attack['id'], attack['model_name'], attack['prompt_input'], attack['status'], attack['response'], attack['method_used'], attack['method_category'], attack['answer_category'], attack['created_at'])
+			messages = format_message(prompt_input, response, "both")
 
 			completion = client.chat.completions.create(
 				model=defense_model, 
@@ -138,7 +139,15 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 			llama_check_result = completion.choices[0].message['content'].split("\n")[2:] # list 
 			result = [
 				{
-					"result": a_result,
+					"aid": aid,
+					"model_name": model_name,
+					"prompt_input": prompt_input,
+					"status": status,
+					"response": response,
+					"method_used": method_used,
+					"method_category": method_category,
+					"answer_category": answer_category,
+					"created_at": created_at,	
 					"llama_check_result": llama_check_result
 				}
 			]
@@ -149,8 +158,8 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 def main(args):
 	# step 0: params config 
 	# db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
-	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/GPTFuzzWenlan/results-Llama-3.2-1B-Instruct-2024-12-02-23-14-15.db"
-	defense_type="post-generation" # also post-generation / both-generation
+	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/roberta_test.db"
+	defense_type="both-generation" # also post-generation / both-generation
 	defense_model="meta-llama/Llama-Guard-3-8B"
 
 	# step 1: start the attack database and get all the attack prompts 
@@ -161,7 +170,7 @@ def main(args):
 
 	# step 3: store the result to the database
 	for result in results: 
-		print(result)
+		print(result[0]["llama_check_result"])
 		print("---------------------------------------------------")
 
 	# step 4: close the database connection

@@ -14,7 +14,7 @@ class AttackDatabase:
         """
         connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
-        table_name = "chat_responses"
+        table_name = "chat_requests"
 
         try:
             # check whether the table exists
@@ -32,10 +32,10 @@ class AttackDatabase:
     
     def get_all_attacks(self):
         # query all the attacks 
-        query = "SELECT * FROM chat_responses"
+        query = "SELECT * FROM chat_requests"
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
-        return [{"id": row[0], "prompt": row[1], "response": row[2], "parent": row[3], "result": row[4]} for row in rows]
+        return [{"id": row[0], "model_name": row[1], "prompt_input": row[2], "status": row[3], "response": row[4], "method_used": row[5], "method_category": row[6], "answer_category": row[7], "created_at": row[8]} for row in rows]
 
     def close(self):
         self.connection.close()
