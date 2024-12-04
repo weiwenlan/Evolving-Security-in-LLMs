@@ -97,7 +97,7 @@ async def chat(request: ChatRequest):
             response = generative_model.generate_content(prompt)
             return {"response": response.text.strip()}
 
-        elif model in ["meta-llama/Llama-3.2-3B-Instruct"]:
+        elif model in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
             client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
             messages = [
                 {
@@ -110,7 +110,7 @@ async def chat(request: ChatRequest):
                 messages=messages,
                 max_tokens=max_tokens
             )
-            return completion.choices[0].message.content
+            return {"response": completion.choices[0].message.content}
 
         else:
             raise HTTPException(

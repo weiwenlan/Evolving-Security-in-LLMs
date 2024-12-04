@@ -42,13 +42,13 @@ def generate_test_requests():
     for data in test_data:
         model_name, method_used, method_category, prompt_input = data
         cursor.execute('''
-            INSERT INTO chat_requests (model_name, prompt_input, status, method_used, method_category, answer_category)
+            INSERT INTO attacked_requests (model_name, prompt_input, status, method_used, method_category, answer_category)
             VALUES (?, ?, 'pending', ?, ?, 'unknown')
         ''', (model_name, prompt_input, method_used, method_category))
     
     conn.commit()
     conn.close()
-    print("Test requests generated successfully in chat_requests table.")
+    print("Test requests generated successfully in attacked_requests table.")
 
 if __name__ == "__main__":
     generate_test_requests()
