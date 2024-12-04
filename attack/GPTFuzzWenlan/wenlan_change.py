@@ -35,25 +35,6 @@ question_path = 'datasets/questions/question_list.csv'
 questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
 selected_questions = random.choices(questions_set, k=5)
 
-# fuzzer = GPTFuzzer(
-#     questions=selected_questions,
-#     initial_seed=initial_seed,
-#     target=openai_model,
-#     predictor=roberta_model,
-#     mutate_policy=MutateRandomSinglePolicy([
-#         OpenAIMutatorCrossOver(openai_model, temperature=0.0),
-#         OpenAIMutatorExpand(openai_model, temperature=1.0),
-#         OpenAIMutatorGenerateSimilar(openai_model, temperature=0.5),
-#         OpenAIMutatorRephrase(openai_model),
-#         OpenAIMutatorShorten(openai_model)],
-#         concatentate=True,
-#     ),
-#     select_policy=MCTSExploreSelectPolicy(),
-#     energy=1,
-#     max_jailbreak=10,
-#     max_query=500,
-# )
-
 fuzzer = GPTFuzzer(
     questions=selected_questions,
     initial_seed=initial_seed,

@@ -24,7 +24,7 @@ def get_connection():
 # model_names = ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo", "claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229", "claude-3-5-haiku-20241022",
 #                "claude-3-haiku-20240307", "claude-3-opus-latest", "gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]
 
-model_names = ["meta-llama/Llama-3.2-3B-Instruct"]
+model_names = ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]
 
 
 # Create all necessary tables
@@ -32,9 +32,9 @@ def create_tables():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Create chat_requests table
+    # Create attacked_requests table
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS chat_requests (
+        CREATE TABLE IF NOT EXISTS attacked_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             model_name TEXT NOT NULL,
             prompt_input TEXT NOT NULL,
@@ -42,7 +42,8 @@ def create_tables():
             response TEXT,
             method_used TEXT,
             method_category TEXT,
-            answer_category TEXT
+            answer_category TEXT,
+            sent_at TIMESTAMP
         )
     """)
 
@@ -61,8 +62,7 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS Defenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            category TEXT,
-            description TEXT
+            category TEXT
         )
     ''')
 
@@ -76,20 +76,25 @@ def create_tables():
 
     # Create Experiments table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Experiments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            model_id INTEGER,
-            attack_id INTEGER,
-            defense_id INTEGER,
-            success_rate REAL,
-            efficiency REAL,
-            date TEXT,
-            notes TEXT,
-            FOREIGN KEY (model_id) REFERENCES Models(id),
-            FOREIGN KEY (attack_id) REFERENCES Attacks(id),
-            FOREIGN KEY (defense_id) REFERENCES Defenses(id)
-        )
-    ''')
+    CREATE TABLE IF NOT EXISTS Experiments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model_id INTEGER,
+        attack_id INTEGER,
+        defense_id INTEGER,
+        attack_timestamp TEXT, 
+        defense_timestamp TEXT,
+        attacked_prompt TEXT, 
+        attacked_response TEXT,
+        attacked_result TEXT,
+        evaluate_status TEXT, 
+        defensed_response TEXT,
+        defensed_result TEXT, 
+        defensed_status TEXT, 
+        FOREIGN KEY (model_id) REFERENCES Models(id),
+        FOREIGN KEY (attack_id) REFERENCES Attacks(id),
+        FOREIGN KEY (defense_id) REFERENCES Defenses(id)
+    )
+''')
 
     # Create Results table
     cursor.execute('''

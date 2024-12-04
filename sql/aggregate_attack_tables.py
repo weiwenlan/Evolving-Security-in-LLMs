@@ -10,7 +10,7 @@ def get_attacks_from_db(db_path):
 
     # Fetch all rows from the Attacks table
     # cursor.execute("SELECT * FROM Attacks")
-    cursor.execute("SELECT * FROM Attacks LIMIT 20;")
+    cursor.execute("SELECT * FROM Attacks")
     rows = cursor.fetchall()
 
     # Fetch column names
