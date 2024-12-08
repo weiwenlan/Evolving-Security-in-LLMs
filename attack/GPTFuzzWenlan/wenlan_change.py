@@ -8,10 +8,21 @@ from gptfuzzer.fuzzer.mutator import (
 from gptfuzzer.fuzzer import GPTFuzzer
 import random
 
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Load API keys from environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+
+
 # Load OpenAI Model
 openai_model_path = 'gpt-4'
 openai_model = OpenAILLM(
-    openai_model_path, "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")
+    openai_model_path, OPENAI_API_KEY)
 
 # Predictor model, we will add more predictor model in the future
 roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
@@ -19,9 +30,9 @@ roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
 
 # Load Llama Model
 from gptfuzzer.llm import LlamaLLM
-huggingface_model_path = "meta-llama/Llama-3.2-1B-Instruct"
+huggingface_model_path = "meta-llama/Llama-3.1-70B-Instruct"
 huggingface_model = LlamaLLM(
-    huggingface_model_path, "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")
+    huggingface_model_path, HUGGINGFACE_API_KEY)
 
 
 # huggingface_model.generate("what is texas county")
@@ -33,12 +44,12 @@ initial_seed = pd.read_csv(seed_path)['text'].tolist()
 
 question_path = 'datasets/questions/question_list.csv'
 questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
-selected_questions = random.choices(questions_set, k=5)
+selected_questions = random.choices(questions_set, k=100)
 
 fuzzer = GPTFuzzer(
     questions=selected_questions,
     initial_seed=initial_seed,
-    target=huggingface_model,
+    target=openai_model,
     predictor=roberta_model,
     mutate_policy=MutateRandomSinglePolicy([
         OpenAIMutatorCrossOver(openai_model, temperature=0.0),
@@ -50,8 +61,9 @@ fuzzer = GPTFuzzer(
     ),
     select_policy=MCTSExploreSelectPolicy(),
     energy=1,
-    max_jailbreak=10,
+    max_jailbreak=100,
     max_query=500,
+    rate_limit= 10,
 )
 
 

@@ -3,7 +3,7 @@ import time
 import csv
 
 from typing import TYPE_CHECKING
-
+from datetime import datetime
 if TYPE_CHECKING:
     from .mutator import Mutator, MutatePolicy
     from .selection import SelectPolicy
@@ -40,7 +40,8 @@ class SQLiteHandler:
                 prompt TEXT,                           -- Prompt text
                 response TEXT,                         -- Single response text
                 parent INTEGER,                        -- Parent ID (can be NULL if root)
-                result TEXT                            -- Single result value
+                result TEXT,                           -- Single result value
+                timestamp TEXT                         -- Timestamp of record creation
             )
         ''')
         connection.commit()
@@ -66,11 +67,13 @@ class SQLiteHandler:
         cursor = connection.cursor()
 
         # Insert each response-result pair as a separate row
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         for response, result in zip(responses, results):
             cursor.execute('''
-                INSERT INTO chat_responses (prompt, response, parent, result)
-                VALUES (?, ?, ?, ?)
-            ''', (prompt, response, parent, result))
+                INSERT INTO chat_responses (prompt, response, parent, result, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (prompt, response, parent, result, current_time))
 
         connection.commit()
         connection.close()
@@ -139,6 +142,7 @@ class GPTFuzzer:
                  energy: int = 1,
                  result_file: str = None,
                  generate_in_batch: bool = False,
+                 rate_limit: int = 0
                  ):
 
         self.questions: 'list[str]' = questions
@@ -166,6 +170,7 @@ class GPTFuzzer:
         self.max_iteration: int = max_iteration
 
         self.energy: int = energy
+        self.rate_limit: int = rate_limit
         
         if result_file is None:
             prefix = f'results-{self.target.model_path.split("/")[-1]}-{time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())}'
@@ -201,6 +206,7 @@ class GPTFuzzer:
         try:
             while not self.is_stop():
                 seed = self.select_policy.select()
+                print(seed)
                 mutated_results = self.mutate_policy.mutate_single(seed)
                 self.evaluate(mutated_results)
                 self.update(mutated_results)
