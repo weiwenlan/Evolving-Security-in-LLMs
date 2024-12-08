@@ -3,7 +3,7 @@ from datetime import datetime
 def populate_experiments(conn):
     """
     Populate the experiments table by combining attack data with all defense models,
-    and map answer_category to attacked_result.
+    and map answer_category to attacked_result, including model_id.
 
     Args:
         conn: Database connection object.
@@ -11,8 +11,12 @@ def populate_experiments(conn):
     cursor = conn.cursor()
 
     try:
-        # Fetch all completed attacks with their answer_category
-        cursor.execute("SELECT id, prompt_input, response, answer_category, sent_at FROM attacked_requests WHERE status = 'completed'")
+        # Fetch all completed attacks with their answer_category and model_id
+        cursor.execute("""
+            SELECT id, model_id, prompt_input, response, answer_category, sent_at
+            FROM attacked_requests
+            WHERE status = 'completed'
+        """)
         attacks = cursor.fetchall()
 
         # Fetch all defense models
@@ -24,7 +28,7 @@ def populate_experiments(conn):
 
         # Populate the experiments table
         for attack in attacks:
-            attack_id, attacked_prompt, attacked_response, attacked_result, attack_timestamp = attack
+            attack_id, model_id, attacked_prompt, attacked_response, attacked_result, attack_timestamp = attack
 
             for defense in defenses:
                 defense_id, defense_name, defense_category = defense
@@ -41,7 +45,7 @@ def populate_experiments(conn):
                         attacked_result
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    None,  # Assuming model_id is not relevant in this step
+                    model_id,  # Use model_id from the attacked_requests table
                     attack_id,
                     defense_id,
                     attack_timestamp or current_time,
