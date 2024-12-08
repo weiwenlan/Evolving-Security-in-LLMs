@@ -25,6 +25,7 @@ def generate_test_requests():
     # Join Models and Attacks to generate a set of test requests
     cursor.execute('''
         SELECT 
+            Models.id AS model_id,
             Models.model_name,
             Attacks.paper_name AS method_used,
             Attacks.attack_category AS method_category,
@@ -38,13 +39,13 @@ def generate_test_requests():
     # Fetch all combinations of model and attack
     test_data = cursor.fetchall()
     
-    # Insert each combination as a new request in chat_requests
+    # Insert each combination as a new request in attacked_requests
     for data in test_data:
-        model_name, method_used, method_category, prompt_input = data
+        model_id, model_name, method_used, method_category, prompt_input = data
         cursor.execute('''
-            INSERT INTO attacked_requests (model_name, prompt_input, status, method_used, method_category, answer_category)
-            VALUES (?, ?, 'pending', ?, ?, 'unknown')
-        ''', (model_name, prompt_input, method_used, method_category))
+            INSERT INTO attacked_requests (model_id, model_name, prompt_input, status, method_used, method_category, answer_category)
+            VALUES (?, ?, ?, 'pending', ?, ?, 'unknown')
+        ''', (model_id, model_name, prompt_input, method_used, method_category))
     
     conn.commit()
     conn.close()
