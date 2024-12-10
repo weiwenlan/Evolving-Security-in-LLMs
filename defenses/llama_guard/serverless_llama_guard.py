@@ -8,6 +8,8 @@ from fastchat.model import add_model_args
 from huggingface_hub import InferenceClient
 from urllib3.exceptions import NotOpenSSLWarning
 from get_attack_table import AttackDatabase
+from helpers import model_configs
+from helpers.get_experiment_tools import *
 
 import get_attack_table
 
@@ -40,7 +42,7 @@ def get_attack_prompt(db_path: str):
 			attack_prompts.append(attack)
 			# print(attack['attack_prompt'])
 			# print("--------------------------------")
-		return attack_prompts[:3]
+		return attack_prompts[:10]
 
 	except Exception as e:
 		print(f"Error: {e}")
@@ -57,10 +59,16 @@ def format_message(attack_prompt: str, attack_response: str, type: str) -> list:
 			"content": attack_prompt
 		}]
 	elif type == "response":
-		formatted_message = [{
-			"role": "assistant",
-			"content": attack_response
-		}]
+		formatted_message = [
+			{
+				"role": "user",
+				"content": ""
+			},
+			{
+				"role": "assistant",
+				"content": attack_response
+			}
+		]
 	elif type == "both":
 		formatted_message = [
 			{
@@ -81,8 +89,8 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
 		
 		for attack in attack_prompts:
-			aid, paper_name, attack_category, attack_prompt = attack['id'], attack['paper_name'], attack['attack_category'], attack['attack_prompt']
-			messages = format_message(attack_prompt, "", "input") # todo: create format message
+			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
+			messages = format_message(prompt, "", "input")
 
 			completion = client.chat.completions.create(
 				model=defense_model, 
@@ -92,27 +100,67 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 			llama_check_result = completion.choices[0].message['content'].split("\n") # list 
 			result = [
 				{
+					"result": a_result,
+					"llama_check_result": llama_check_result
+				}
+			]
+			results.append(result)
+	elif defense_type == "post-generation":
+		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+		
+		for attack in attack_prompts:
+			aid, prompt, response, parent, a_result = attack['id'], attack['prompt'], attack['response'], attack['parent'], attack['result']
+			messages = format_message("", response, "response")
+
+			completion = client.chat.completions.create(
+				model=defense_model, 
+				messages=messages, 
+				max_tokens=2000
+			)
+			llama_check_result = completion.choices[0].message['content'].split("\n")[2:] # list 
+			result = [
+				{
+					"result": a_result,
+					"llama_check_result": llama_check_result
+				}
+			]
+			results.append(result)
+	elif defense_type == "both-generation":
+		client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+		
+		for attack in attack_prompts:
+			aid, model_name, prompt_input, status, response, method_used, method_category, answer_category, created_at = (
+				attack['id'], attack['model_name'], attack['prompt_input'], attack['status'], attack['response'], attack['method_used'], attack['method_category'], attack['answer_category'], attack['created_at'])
+			messages = format_message(prompt_input, response, "both")
+
+			completion = client.chat.completions.create(
+				model=defense_model, 
+				messages=messages, 
+				max_tokens=2000
+			)
+			llama_check_result = completion.choices[0].message['content'].split("\n")[2:] # list 
+			result = [
+				{
 					"aid": aid,
-					"paper_name": paper_name,
-					"attack_category": attack_category,
-					"attack_prompt": attack_prompt,
+					"model_name": model_name,
+					"prompt_input": prompt_input,
+					"status": status,
+					"response": response,
+					"method_used": method_used,
+					"method_category": method_category,
+					"answer_category": answer_category,
+					"created_at": created_at,	
 					"llama_check_result": llama_check_result
 				}
 			]
 			results.append(result)
 
-	elif defense_type == "post-generation": # todo: post-generation defense
-		pass 
-	elif defense_type == "both-generation": # todo: both-generation defense
-		pass
-
 	return results
 
 def main(args):
 	# step 0: params config 
-	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
-	defense_type="pre-generation" # also post-generation / both-generation
-	defense_model="meta-llama/Llama-Guard-3-8B"
+	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/roberta_test.db"
+	defense_type="both-generation" # also post-generation / both-generation
 
 	# step 1: start the attack database and get all the attack prompts 
 	attack_prompts = get_attack_prompt(db_path)
@@ -122,7 +170,8 @@ def main(args):
 
 	# step 3: store the result to the database
 	for result in results: 
-		pass
+		print(result[0]["llama_check_result"])
+		print("---------------------------------------------------")
 
 	# step 4: close the database connection
 
