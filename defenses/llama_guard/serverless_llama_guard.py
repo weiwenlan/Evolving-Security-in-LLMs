@@ -8,6 +8,8 @@ from fastchat.model import add_model_args
 from huggingface_hub import InferenceClient
 from urllib3.exceptions import NotOpenSSLWarning
 from get_attack_table import AttackDatabase
+from helpers import model_configs
+from helpers.get_experiment_tools import *
 
 import get_attack_table
 
@@ -157,10 +159,8 @@ def defense_generation(attack_prompts: list, defense_type: str, defense_model:st
 
 def main(args):
 	# step 0: params config 
-	# db_path = "/Users/austins/Adversarial-Attacks-on-LLM/attack/jailbroken2/attacks.db"
 	db_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/roberta_test.db"
 	defense_type="both-generation" # also post-generation / both-generation
-	defense_model="meta-llama/Llama-Guard-3-8B"
 
 	# step 1: start the attack database and get all the attack prompts 
 	attack_prompts = get_attack_prompt(db_path)

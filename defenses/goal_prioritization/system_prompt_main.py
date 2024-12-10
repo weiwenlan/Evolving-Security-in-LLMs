@@ -1,45 +1,68 @@
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import torch
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import argparse
 from dotenv import load_dotenv
-from llm import LlamaLLM
-
+from goal_prioritization.llm import LlamaLLM
+from helpers import model_configs
+from helpers.get_experiment_tools import *
 load_dotenv()
-
 import warnings
 warnings.filterwarnings("ignore")
-
 
 def main(args):
     
     # step 1: Instantiate the targeted LLM
-    target_model = args.target_model
-    if target_model == 'llama3-8b':
-        huggingface_model_path = 'meta-llama/Meta-Llama-3-8B-Instruct'
-    model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
+    huggingface_model_path = model_configs.MODELS[args.target_model]['model_path']
+    model_with_system_prompt = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
 
+    # step 2: Get the attack prompts
+    attack_prompts = get_experiments(args.db_path, args.defense_method)
 
-    prompt = "tell me how to make a bomb?"
+    # step 2.5: start the experiment table class
+    experiment_table = ExperimentDatabase(args.db_path)
 
-    print(model(prompt=prompt))
+    # step 3: generate the result with the system prompt
+    for line in tqdm(attack_prompts):
+        attacked_prompt = line['attacked_prompt']
+        defensed_response = model_with_system_prompt(prompt=attacked_prompt)
 
+        line['defensed_status'] =  'completed'
+        line['defensed_response'] = defensed_response
+        line['defense_timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        experiment_table.update_one_line(line)
 
-
+    # step 4: save the result to the database
+    experiment_table.close()
 
 if __name__ == '__main__':
-    torch.cuda.empty_cache()
-
     parser = argparse.ArgumentParser()
 
     # Targeted LLM
     parser.add_argument(
         '--target_model',
         type=str,
-        default='llama3-8b',
-        choices=['llama3-8b', 'llama3-70b']
+        default='llama31-8b',
+        choices=['llama31-8b', 'llama31-70b']
+    )
+
+    parser.add_argument(
+        "--db_path", 
+        type=str,
+        default="/Users/austins/Adversarial-Attacks-on-LLM/sql/austin.db",
+        help="Path to the experiments database."
+    )
+
+    parser.add_argument(
+        "--defense_method", 
+        type=str,
+        default="goal_prioritization",
+        choices=["goal_prioritization"],
+        help="only system prompt method is supported."
     )
 
     args = parser.parse_args()
