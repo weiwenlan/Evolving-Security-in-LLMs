@@ -42,16 +42,18 @@ def populate_experiments(conn):
                         attack_timestamp,
                         attacked_prompt,
                         attacked_response,
-                        attacked_result
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        attacked_result,
+                        defensed_status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    model_id,  # Use model_id from the attacked_requests table
+                    model_id,
                     attack_id,
                     defense_id,
                     attack_timestamp or current_time,
                     attacked_prompt,
                     attacked_response,
-                    attacked_result
+                    attacked_result,
+                    "pending"
                 ))
 
         # Commit the transaction
