@@ -5,77 +5,70 @@ import pandas as pd
 from tqdm.auto import tqdm
 import argparse
 from dotenv import load_dotenv
+from tqdm.auto import tqdm
 
-import lib.perturbations as perturbations
-import lib.defenses as defenses
-import lib.attacks as attacks
-import lib.language_models as language_models
-import lib.model_configs as model_configs
-from lib.llm import LlamaLLM
+import smooth_llm.lib.perturbations as perturbations
+import smooth_llm.lib.defenses as defenses
+import smooth_llm.lib.attacks as attacks
+import smooth_llm.lib.language_models as language_models
+from smooth_llm.lib.llm import LlamaLLM
+
+from helpers.model_configs import *
+from helpers.get_experiment_tools import *
 
 load_dotenv()
 
-import warnings
-
-warnings.filterwarnings("ignore")
-
-
 def main(args):
 
-    # step 1: Create output directories
-    os.makedirs(args.results_dir, exist_ok=True)
+    # step 0: get some default configurations
+    smoothllm_num_copies = 5
+    smoothllm_pert_pct = 10
+    smoothllm_pert_type = "RandomSwapPerturbation"
+    prompt_format="General"
     
-    # step 2: Instantiate the targeted LLM
+    # step 1: Instantiate the targeted LLM
     target_model = args.target_model
-    huggingface_model_path=model_configs.MODELS[target_model]['model_path']
+    huggingface_model_path=MODELS[target_model]['model_path']
     model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
-    # config = model_configs.MODELS[args.target_model]
-    # target_model = language_models.LLM(
-    #     model_path=config['model_path'],
-    #     tokenizer_path=config['tokenizer_path'],
-    #     conv_template_name=config['conversation_template'],
-    #     device='cuda:0'
-    # )
 
-    # step 3: Create attack instance, used to create prompts
-    attack = vars(attacks)[args.attack](
-        logfile=args.attack_logfile,
-        target_model=target_model
+    # step 2: Create attack instance, used to create prompts
+    attack = vars(attacks)['General'](
+        target_model=target_model,
+        db_path=args.db_path,
+        defense_method=args.defense_method
     )
 
     # Create SmoothLLM instance
     defense = defenses.SmoothLLM(
         target_model=model,
-        pert_type=args.smoothllm_pert_type,
-        pert_pct=args.smoothllm_pert_pct,
-        num_copies=args.smoothllm_num_copies
+        pert_type=smoothllm_pert_type,
+        pert_pct=smoothllm_pert_pct,
+        num_copies=smoothllm_num_copies 
     )
+    
+    # step 2.5: open the database connection
+    experiment_table = ExperimentDatabase(args.db_path)
 
-    # model.generate("how are you doing today?")
+    # step 3: get all the smoothllm outputs
     jailbroken_results = []
     for i, prompt in tqdm(enumerate(attack.prompts)):
-        output = defense(prompt)
-        jb = defense.is_jailbroken(output)
-        jailbroken_results.append(jb)
+        prompt.line["defensed_response"] = defense(prompt)
+        prompt.line["defensed_status"] = "completed"
+        prompt.line["defense_timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    print(jailbroken_results)
+        experiment_table.update_one_line(prompt.line)
+        jb = defense.is_jailbroken(prompt.line["defensed_response"])
+        jailbroken_results.append(jb)
 
     # Save results to a pandas DataFrame
     summary_df = pd.DataFrame.from_dict({
-        'Number of smoothing copies': [args.smoothllm_num_copies],
-        'Perturbation type': [args.smoothllm_pert_type],
-        'Perturbation percentage': [args.smoothllm_pert_pct],
-        'JB percentage': [np.mean(jailbroken_results) * 100],
-        'Trial index': [args.trial]
+        'Number of smoothing copies': [smoothllm_num_copies],
+        'Perturbation type': [smoothllm_pert_type],
+        'Perturbation percentage': [smoothllm_pert_pct],
+        'JB percentage': [np.mean(jailbroken_results) * 100]
     })
-    summary_df.to_pickle(os.path.join(
-        args.results_dir, 'summary.pd'
-    ))
-    print(summary_df)
-
 
 if __name__ == '__main__':
-    torch.cuda.empty_cache()
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

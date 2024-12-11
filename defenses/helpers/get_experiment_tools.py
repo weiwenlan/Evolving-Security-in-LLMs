@@ -18,7 +18,7 @@ def get_experiments(db_path:str, defense_method:str):
             FROM 
                 Experiments 
             WHERE 
-                defense_id = ?
+                defensed_status='pending' and defense_id = ?
             """
         cursor.execute(query, (defense_num,))
         rows = cursor.fetchall()
