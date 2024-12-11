@@ -1,11 +1,14 @@
 import json
 import pandas as pd
+from helpers.model_configs import *
+from helpers.get_experiment_tools import *
 
 class Prompt:
-    def __init__(self, full_prompt, perturbable_prompt, max_new_tokens):
+    def __init__(self, full_prompt, perturbable_prompt, max_new_tokens, line):
         self.full_prompt = full_prompt
         self.perturbable_prompt = perturbable_prompt
         self.max_new_tokens = max_new_tokens
+        self.line=line
 
     def perturb(self, perturbation_fn):
         perturbed_prompt = perturbation_fn(self.perturbable_prompt)
@@ -19,6 +22,11 @@ class Attack:
     def __init__(self, logfile, target_model):
         self.logfile = logfile
         self.target_model = target_model
+
+class GeneralAttack:
+    def __init__(self, target_model, db_path):
+        self.target_model = target_model
+        self.db_path = db_path
 
 class GCG(Attack):
 
@@ -139,3 +147,20 @@ class Jailbroken(Attack):
             prompt,
             max_new_tokens=1000
         )
+
+class General(Attack):
+    """
+    llm Jailbroken
+    """
+    def __init__(self, target_model, db_path, defense_method):
+        super(General, self).__init__(target_model, db_path)
+        self.defense_method = defense_method
+        self.attack_prompts = get_experiments(db_path, defense_method)
+
+        self.prompts = []
+        for line in self.attack_prompts:
+            self.prompts.append(self.create_prompt(line['attacked_prompt'], line))
+    
+    def create_prompt(self, prompt, line):
+        return Prompt(prompt,prompt,1000,line)
+

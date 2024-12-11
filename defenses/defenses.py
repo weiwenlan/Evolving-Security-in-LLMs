@@ -5,19 +5,18 @@ import argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from goal_prioritization.system_prompt_main import main as goal_main
-# from llama_guard.guard_main import main as guard_main
-# from smooth_llm.main import main as smooth_main
+from llama_guard.serverless_llama_guard import main as guard_main
+from smooth_llm.smooth_llm_main import main as smooth_main
 
 def run_all(args):
-
     if args.defense_method == 'goal_prioritization':       
-        print("Running Goal Prioritization...")
+        print("*****Running Goal Prioritization...")
         goal_main(args) 
     elif args.defense_method == 'llama_guard':
-        print("Running Llama Guard...")
+        print("*****Running Llama Guard...")
         guard_main(args)
     elif args.defense_method == 'smooth_llm':
-        print("Running Smooth-llm...")
+        print("*****Running Smooth-llm...")
         smooth_main(args) 
 
 if __name__ == "__main__":
@@ -26,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--defense_method', 
         type = str,
-        default = 'goal_prioritization',
+        default = 'smooth_llm',
         choices = ['goal_prioritization', 'llama_guard', 'smooth_llm'],
         help = 'Specify the defense method to run with.'
     )

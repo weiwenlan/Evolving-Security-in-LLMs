@@ -3,7 +3,7 @@ import copy
 import random
 import numpy as np
 import pdb
-import lib.perturbations as perturbations
+import smooth_llm.lib.perturbations as perturbations
 
 class Defense:
 
@@ -57,7 +57,7 @@ class SmoothLLM(Defense):
         )
 
     @torch.no_grad()
-    def __call__(self, prompt, batch_size=1, max_new_len=100):
+    def __call__(self, prompt, max_new_len=100):
         all_inputs = []
         for _ in range(self.num_copies):
             prompt_copy = copy.deepcopy(prompt)
@@ -79,7 +79,7 @@ class SmoothLLM(Defense):
 
         #     all_outputs.extend(batch_outputs)
         #     torch.cuda.empty_cache()
-        for input in all_inputs:
+        for idx, input in enumerate(all_inputs):
             output = self.target_model(input)
             all_outputs.append(output)
 
@@ -99,6 +99,9 @@ class SmoothLLM(Defense):
             output for (output, jb) in outputs_and_jbs 
             if jb == smoothLLM_jb
         ]
+
+        result = random.choice(majority_outputs)
+
         return random.choice(majority_outputs)
 
 
