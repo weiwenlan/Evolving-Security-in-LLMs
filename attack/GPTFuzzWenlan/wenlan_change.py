@@ -20,7 +20,7 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 
 # Load OpenAI Model
-openai_model_path = 'gpt-4'
+openai_model_path = 'gpt-4-turbo'
 openai_model = OpenAILLM(
     openai_model_path, OPENAI_API_KEY)
 

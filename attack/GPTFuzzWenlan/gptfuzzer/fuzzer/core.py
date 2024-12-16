@@ -206,7 +206,6 @@ class GPTFuzzer:
         try:
             while not self.is_stop():
                 seed = self.select_policy.select()
-                print(seed)
                 mutated_results = self.mutate_policy.mutate_single(seed)
                 self.evaluate(mutated_results)
                 self.update(mutated_results)
