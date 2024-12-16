@@ -73,7 +73,7 @@ def main(args):
         'JB percentage': [np.mean(jailbroken_results) * 100]
     })
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument(
