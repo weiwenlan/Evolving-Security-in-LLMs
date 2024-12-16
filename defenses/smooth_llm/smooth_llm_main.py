@@ -29,7 +29,12 @@ def main(args):
     # step 1: Instantiate the targeted LLM
     target_model = args.target_model
     huggingface_model_path=MODELS[target_model]['model_path']
-    model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
+    if 'llama' in args.target_model:
+        print('smooth-llm is using llama model')
+        model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
+    elif 'gpt' in args.target_model:
+        print('smooth-llm is using gpt model')
+        model = OpenAILLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
 
     # step 2: Create attack instance, used to create prompts
     attack = vars(attacks)['General'](
@@ -70,60 +75,60 @@ def main(args):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--results_dir',
-        type=str,
-        default='./results'
-    )
-    parser.add_argument(
-        '--trial',
-        type=int,
-        default=0
-    )
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument(
+    #     '--results_dir',
+    #     type=str,
+    #     default='./results'
+    # )
+    # parser.add_argument(
+    #     '--trial',
+    #     type=int,
+    #     default=0
+    # )
 
-    # Targeted LLM
-    parser.add_argument(
-        '--target_model',
-        type=str,
-        default='llama3-8b',
-        choices=['llama3-8b', 'llama3-70b']
-    )
+    # # Targeted LLM
+    # parser.add_argument(
+    #     '--target_model',
+    #     type=str,
+    #     default='llama3-8b',
+    #     choices=['llama3-8b', 'llama3-70b','gpt-3.5-turbo','gpt-4-turbo']
+    # )
 
-    # Attacking LLM
-    parser.add_argument(
-        '--attack',
-        type=str,
-        default='Jailbroken',
-        choices=['GCG, GPTfuzzer', 'Jailbroken', 'Multilingual']
-    )
-    parser.add_argument(
-        '--attack_logfile',
-        type=str,
-        default='data/jailbroken/llama_jailbroken.json'
-    )
+    # # Attacking LLM
+    # parser.add_argument(
+    #     '--attack',
+    #     type=str,
+    #     default='Jailbroken',
+    #     choices=['GCG, GPTfuzzer', 'Jailbroken', 'Multilingual']
+    # )
+    # parser.add_argument(
+    #     '--attack_logfile',
+    #     type=str,
+    #     default='data/jailbroken/llama_jailbroken.json'
+    # )
 
-    # SmoothLLM
-    parser.add_argument(
-        '--smoothllm_num_copies',
-        type=int,
-        default=5,
-    )
-    parser.add_argument(
-        '--smoothllm_pert_pct',
-        type=int,
-        default=10
-    )
-    parser.add_argument(
-        '--smoothllm_pert_type',
-        type=str,
-        default='RandomSwapPerturbation',
-        choices=[
-            'RandomSwapPerturbation',
-            'RandomPatchPerturbation',
-            'RandomInsertPerturbation'
-        ]
-    )
+    # # SmoothLLM
+    # parser.add_argument(
+    #     '--smoothllm_num_copies',
+    #     type=int,
+    #     default=5,
+    # )
+    # parser.add_argument(
+    #     '--smoothllm_pert_pct',
+    #     type=int,
+    #     default=10
+    # )
+    # parser.add_argument(
+    #     '--smoothllm_pert_type',
+    #     type=str,
+    #     default='RandomSwapPerturbation',
+    #     choices=[
+    #         'RandomSwapPerturbation',
+    #         'RandomPatchPerturbation',
+    #         'RandomInsertPerturbation'
+    #     ]
+    # )
 
-    args = parser.parse_args()
-    main(args)
+    # args = parser.parse_args()
+    # main(args)

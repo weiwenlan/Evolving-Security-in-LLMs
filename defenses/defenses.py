@@ -33,7 +33,7 @@ if __name__ == "__main__":
         '--target_model',
         type=str,
         default='llama31-8b',
-        choices=['llama31-8b', 'llama31-70b'],
+        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo'],
         help='Specify the target model to run with.'
     )
 
