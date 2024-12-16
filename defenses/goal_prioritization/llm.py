@@ -27,14 +27,14 @@ class OpenAILLM(LLM):
                  ):
         super().__init__()
 
-        if model_path not in ['gpt-3.5-turbo', 'gpt-4']:
+        if model_path not in ['gpt-3.5-turbo', 'gpt-4-turbo']:
             raise ValueError(
-                'OpenAI model path should be gpt-3.5-turbo or gpt-4')
+                'OpenAI model path should be gpt-3.5-turbo or gpt-4-turbo')
         openai.api_key = api_key
         self.model_path = model_path
         self.system_message = system_message if system_message is not None else "You are a helpful assistant."
 
-    def generate(self, prompt, temperature=0, max_tokens=512, n=1, max_trials=10, failure_sleep_time=5):
+    def generate(self, prompt, temperature=0, max_tokens=512, n=1, max_trials=3, failure_sleep_time=5):
         for _ in range(max_trials):
             try:
                 results = openai.ChatCompletion.create(
