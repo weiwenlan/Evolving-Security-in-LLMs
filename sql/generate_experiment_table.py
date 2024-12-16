@@ -1,4 +1,5 @@
 from datetime import datetime
+import argparse
 
 def populate_experiments(conn):
     """
@@ -73,8 +74,11 @@ import sqlite3
 # Run the main function
 if __name__ == "__main__":
     # Path to your SQLite database
-    db_path = "sql/chat_requests.db"
+    parser = argparse.ArgumentParser(description="Process rejected requests from a database.")
+    parser.add_argument("--db", required=True, help="Path to the SQLite database.")
 
+    args = parser.parse_args()
+    db_path = args.db
     # Establish a database connection
     try:
         conn = sqlite3.connect(db_path)

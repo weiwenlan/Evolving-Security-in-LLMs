@@ -17,39 +17,49 @@ def create_connection(db_path):
         print(e)
     return conn
 
-# Function to generate test requests
+# Function to generate test requests only for new models
 def generate_test_requests():
     conn = create_connection(db_path)
     cursor = conn.cursor()
 
-    # Join Models and Attacks to generate a set of test requests
+    # Find new models that are not in attacked_requests
     cursor.execute('''
-        SELECT 
-            Models.id AS model_id,
-            Models.model_name,
-            Attacks.paper_name AS method_used,
-            Attacks.attack_category AS method_category,
-            Attacks.attack_prompt AS prompt_input
-        FROM 
-            Models
-        JOIN 
-            Attacks ON 1=1  -- Cartesian product to test each model with each attack
+        SELECT id, model_name
+        FROM Models
+        WHERE id NOT IN (SELECT DISTINCT model_id FROM attacked_requests)
     ''')
+    
+    new_models = cursor.fetchall()
 
-    # Fetch all combinations of model and attack
-    test_data = cursor.fetchall()
+    # If there are new models, join with Attacks and generate requests
+    if new_models:
+        for model_id, model_name in new_models:
+            cursor.execute('''
+                SELECT 
+                    ? AS model_id,
+                    ? AS model_name,
+                    Attacks.paper_name AS method_used,
+                    Attacks.attack_category AS method_category,
+                    Attacks.attack_prompt AS prompt_input
+                FROM Attacks
+            ''', (model_id, model_name))
+            
+            test_data = cursor.fetchall()
+
+            # Insert new requests into attacked_requests
+            for data in test_data:
+                model_id, model_name, method_used, method_category, prompt_input = data
+                cursor.execute('''
+                    INSERT INTO attacked_requests (model_id, model_name, prompt_input, status, method_used, method_category, answer_category)
+                    VALUES (?, ?, ?, 'pending', ?, ?, 'unknown')
+                ''', (model_id, model_name, prompt_input, method_used, method_category))
+        
+        conn.commit()
+        print("Test requests generated successfully for new models in attacked_requests table.")
+    else:
+        print("No new models found to generate test requests.")
     
-    # Insert each combination as a new request in attacked_requests
-    for data in test_data:
-        model_id, model_name, method_used, method_category, prompt_input = data
-        cursor.execute('''
-            INSERT INTO attacked_requests (model_id, model_name, prompt_input, status, method_used, method_category, answer_category)
-            VALUES (?, ?, ?, 'pending', ?, ?, 'unknown')
-        ''', (model_id, model_name, prompt_input, method_used, method_category))
-    
-    conn.commit()
     conn.close()
-    print("Test requests generated successfully in attacked_requests table.")
 
 if __name__ == "__main__":
     generate_test_requests()
