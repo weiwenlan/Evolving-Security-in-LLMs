@@ -47,7 +47,7 @@ def main(args):
     # step 4: save the result to the database
     experiment_table.close()
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # parser = argparse.ArgumentParser()
 
     # # Targeted LLM
