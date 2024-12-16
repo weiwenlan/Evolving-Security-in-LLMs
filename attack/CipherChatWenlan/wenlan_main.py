@@ -101,7 +101,7 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
         # Add user message to the conversation
         messages = messages + [{"role": "user", "content": prompt}]
 
-        if model_name in ["gpt-3.5-turbo", "gpt-4"]:
+        if model_name in ["gpt-3.5-turbo", "gpt-4-turbo"]:
             # Query the model for a response
             chat_completion = openai.ChatCompletion.create(
                 model=model_name,

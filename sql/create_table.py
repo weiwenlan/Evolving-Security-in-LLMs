@@ -27,7 +27,9 @@ def get_connection():
 #                "claude-3-haiku-20240307", "claude-3-opus-latest", "gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]
 
 model_names = ["meta-llama/Llama-3.1-8B-Instruct",
-               "meta-llama/Llama-3.1-70B-Instruct"]
+               "meta-llama/Llama-3.1-70B-Instruct",
+               "gpt-3.5-turbo",
+               "gpt-4-turbo"]
 
 
 # Create all necessary tables
