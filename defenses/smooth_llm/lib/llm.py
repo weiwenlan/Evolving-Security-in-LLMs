@@ -78,7 +78,7 @@ class OpenAILLM(LLM):
         self.model_path = model_path
         self.system_message = system_message if system_message is not None else "You are a helpful assistant."
 
-    def generate(self, prompt, temperature=0, max_tokens=512, n=1, max_trials=3, failure_sleep_time=5):
+    def __call__(self, prompt, temperature=0, max_tokens=512, n=1, max_trials=3, failure_sleep_time=5):
         for _ in range(max_trials):
             try:
                 results = openai.ChatCompletion.create(
@@ -90,7 +90,7 @@ class OpenAILLM(LLM):
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
-                return [results.choices[i].message.content for i in range(n)]
+                return [results.choices[i].message.content for i in range(n)][0]
             except Exception as e:
                 logging.warning(
                     f"OpenAI API call failed due to {e}. Retrying {_+1} / {max_trials} times...")
