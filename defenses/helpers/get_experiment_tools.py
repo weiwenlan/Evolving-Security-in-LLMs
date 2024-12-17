@@ -22,7 +22,6 @@ def get_experiments(db_path:str, defense_method:str):
             """
         cursor.execute(query, (defense_num,))
         rows = cursor.fetchall()
-
         print("the total number of this experiment is ", len(rows))
         return [{
                     "request_id": row[0],
