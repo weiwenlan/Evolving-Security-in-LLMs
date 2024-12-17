@@ -11,7 +11,7 @@ import smooth_llm.lib.perturbations as perturbations
 import smooth_llm.lib.defenses as defenses
 import smooth_llm.lib.attacks as attacks
 import smooth_llm.lib.language_models as language_models
-from smooth_llm.lib.llm import LlamaLLM
+from smooth_llm.lib.llm import LlamaLLM, OpenAILLM
 
 from helpers.model_configs import *
 from helpers.get_experiment_tools import *
@@ -34,7 +34,7 @@ def main(args):
         model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
     elif 'gpt' in args.target_model:
         print('smooth-llm is using gpt model')
-        model = OpenAILLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
+        model = OpenAILLM(huggingface_model_path, os.getenv("OPENAI_API_KEY"))
 
     # step 2: Create attack instance, used to create prompts
     attack = vars(attacks)['General'](

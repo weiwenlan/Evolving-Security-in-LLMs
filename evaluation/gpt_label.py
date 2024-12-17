@@ -158,14 +158,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--db_path", 
         type=str,
-        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/cipherChat_llama3.18b_500_chat_requests.db",
+        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/reNeLLM_llama3.1_8b_500_chat_requests.db",
         help="Path to the experiments database."
     )
 
     parser.add_argument(
         '--label_evaluation',
         type=bool,
-        default=True,
+        default=False,
         help='Whether to get the metrics of the evaluation.'
     )
 

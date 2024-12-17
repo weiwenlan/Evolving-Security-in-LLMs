@@ -1,18 +1,11 @@
-methods=("llama_guard" "goal_prioritization") 
-
+# methods=("smooth_llm" "goal_prioritization" "llama_guard") 
+methods=("smooth_llm") 
 db_paths=(
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/llama31-70b/cipherChat_llama3.1_70b_chat_requests_500.db"
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/llama31-70b/GPTFuzz_llama3.1_70b_chat_requests_500.db"
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/llama31-70b/jailbroken_llama_3.1_70b_chat_requests_500.db"
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/llama31-70b/reNeLLM_llama3.1_70b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/gpt-4-turbo/cipherChat_gpt4_chat_requests_500.db"
 )
 
-# db_paths=(
-#       "/Users/austins/Adversarial-Attacks-on-LLM/data/500/gpt-3.5-turbo/cipherChat_gpt3.5_chat_requests_500.db"
-# )
-
-# target_model='gpt-3.5-turbo'
-target_model='llama31-70b'
+target_model='gpt-4-turbo'
+# target_model='llama31-70b'
 
 for method in "${methods[@]}"; do
   echo "Starting method: $method"

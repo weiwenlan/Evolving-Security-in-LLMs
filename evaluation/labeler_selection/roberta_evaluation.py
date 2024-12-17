@@ -30,29 +30,27 @@ class RoBERTaPredictor(Predictor):
         predicted_classes = predicted_classes.cpu().tolist()
         return predicted_classes
     
-
-def classify_responses_and_append(file_path, predictor, output_path):
+def classify_responses_and_update(file_path, predictor):
     """
-    Reads an Excel file containing 'gpt_evaluation' column, adds a new column
-    for RoBERTa's predictions, and saves the updated file.
+    Reads an Excel file containing 'response' columns,
+    adds a new column for RoBERTa's predictions directly to the file.
 
     Args:
         file_path (str): Path to the input Excel file.
         predictor (Predictor): Instance of a predictor class (e.g., RoBERTaPredictor).
-        output_path (str): Path to save the updated Excel file.
     """
     # Load the Excel file
     data = pd.read_excel(file_path)
 
     # Check if the required columns exist
-    if 'response' not in data.columns or 'gpt_evaluation' not in data.columns:
-        raise ValueError("The input file must contain 'response' and 'gpt_evaluation' columns.")
+    if 'model_response' not in data.columns:
+        raise ValueError("The input file must contain 'model_response' columns.")
 
     # Initialize a list to store results
     roberta_results = []
 
     # Add tqdm for progress tracking
-    for response in tqdm(data['response'], desc="Classifying responses with RoBERTa"):
+    for response in tqdm(data['model_response'], desc="Classifying responses with RoBERTa"):
         if pd.notnull(response):  # Ensure response is not NaN
             # Predict the category (0: safe, 1: unsafe)
             result = predictor.predict([response])[0]  # Predict returns a list, take the first item
@@ -64,20 +62,16 @@ def classify_responses_and_append(file_path, predictor, output_path):
     # Add the results to a new column
     data['roberta_evaluation'] = roberta_results
 
-    # Save the updated data to a new Excel file
-    data.to_excel(output_path, index=False)
-    print(f"Updated file saved to: {output_path}")
-
+    # Save the updated data back to the original Excel file
+    data.to_excel(file_path, index=False)
+    print(f"Updated file saved to: {file_path}")
 
 if __name__ == "__main__":
     # Initialize the predictor
     predictor = RoBERTaPredictor('hubert233/GPTFuzz', device='cpu')
 
     # Path to the input Excel file (with GPT labels)
-    input_file_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/response_evaluation_with_tqdm.xlsx"  # Replace with your GPT-labeled file path
+    input_file_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/labeler_selection/labeler_evaluation_set.xlsx"
 
-    # Path to save the updated Excel file
-    output_file_path = "/Users/austins/Adversarial-Attacks-on-LLM/evaluation/final_classified_data.xlsx"
-
-    # Process the responses
-    classify_responses_and_append(input_file_path, predictor, output_file_path)
+    # Process the responses and update the file
+    classify_responses_and_update(input_file_path, predictor)
