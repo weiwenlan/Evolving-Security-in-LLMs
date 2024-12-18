@@ -19,7 +19,7 @@ def get_experiments_with_defense(db_path:str):
                 defensed_status='completed'
             """
 
-        # and evalute_status!='completed'
+        # 
         cursor.execute(query)
         rows = cursor.fetchall()
 

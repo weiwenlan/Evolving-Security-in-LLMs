@@ -82,7 +82,7 @@ def defense_generation(attack_prompts: list, experiment_table, defense_type: str
 		completion = client.chat.completions.create(
 			model=defense_model, 
 			messages=messages, 
-			max_tokens=2000
+			max_tokens=1500
 		)
 
 		attack['defensed_response'] = completion.choices[0].message['content'].split("\n")[2:3][0]
