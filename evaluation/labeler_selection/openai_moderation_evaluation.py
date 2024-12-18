@@ -34,7 +34,6 @@ def main(args):
 
     # Add new columns for evaluation
     data["flagged"] = None
-    data["categories"] = None
     data["error"] = None
 
     # Evaluate each response
@@ -44,10 +43,6 @@ def main(args):
             data.at[index, "error"] = result["error"]
         else:
             data.at[index, "flagged"] = result["flagged"]
-            data.at[index, "categories"] = ", ".join(
-                [f"{k}: {v}" for k, v in result["categories"].items()]
-            )
-
     # Save the updated data back to the same file
     data.to_excel(file_path, index=False)
 
