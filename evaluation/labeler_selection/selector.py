@@ -180,7 +180,8 @@ def get_one_evaluation(labeler: str, df: pd.DataFrame):
 # gpt-4o-mini_improved2_evaluation
 # gpt-4o_improved2_haha_evaluation
 # Meta-Llama-3.1-70B-Instruct_improved2_evaluation
-get_one_evaluation('Meta-Llama-3.1-70B-Instruct_improved2_evaluation', df)
+# Meta-Llama-3.1-8B-Instruct_improved2_evaluation
+get_one_evaluation('Meta-Llama-3.1-8B-Instruct_improved2_evaluation', df)
 # get_all_evaluations(df)
 
 
