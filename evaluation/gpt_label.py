@@ -73,7 +73,7 @@ def gather_experiment_result_by_attack_id(experiment_result):
 
         if unique_id not in defense_dict:
             defense_dict[unique_id] = []
-        if line['defensed_result'] and line['defensed_result'] != 'no_answer':
+        if line['defensed_result'] and (line['defensed_result'] == 'attacked' or line['defensed_result'] == 'defensed'):
             defense_dict[unique_id].append(label_converter(line['defensed_result']))
 
     for key, value in attack_dict.items():
