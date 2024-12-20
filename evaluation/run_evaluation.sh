@@ -2,12 +2,11 @@
 
 # Define the evaluation models and database paths
 db_paths=(
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama3-70b/cipherChat_llama3.1_70b_chat_requests_500.db"
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama3-70b/GPTFuzz_llama3.1_70b_chat_requests_500.db"
+    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama3-8b/cipherChat_llama3.18b_500_chat_requests.db"
 )
 
 evaluation_model="gpt-4o-mini"
-label_evaluation='yes'
+label_evaluation='no'
 get_metrics='yes'
 
 # Loop through each database path
