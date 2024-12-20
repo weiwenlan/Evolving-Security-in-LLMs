@@ -20,7 +20,7 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 
 # Load OpenAI Model
-openai_model_path = 'gpt-4-turbo'
+openai_model_path = 'gpt-3.5-turbo'
 openai_model = OpenAILLM(
     openai_model_path, OPENAI_API_KEY)
 
@@ -30,12 +30,9 @@ roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
 
 # Load Llama Model
 from gptfuzzer.llm import LlamaLLM
-huggingface_model_path = "meta-llama/Llama-3.1-70B-Instruct"
+huggingface_model_path = "meta-llama/Llama-2-7b-chat-hf"
 huggingface_model = LlamaLLM(
     huggingface_model_path, HUGGINGFACE_API_KEY)
-
-
-# huggingface_model.generate("what is texas county")
 
 
 # jailbreak template dataset used in GPTFuzzer, we are now testing other datasets and will add new datasets in the future
@@ -46,17 +43,20 @@ question_path = 'datasets/questions/question_list.csv'
 questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
 selected_questions = random.choices(questions_set, k=100)
 
+### target model
+target_model = huggingface_model
+mutate_model = openai_model
 fuzzer = GPTFuzzer(
     questions=selected_questions,
     initial_seed=initial_seed,
-    target=openai_model,
+    target=target_model,
     predictor=roberta_model,
     mutate_policy=MutateRandomSinglePolicy([
-        OpenAIMutatorCrossOver(openai_model, temperature=0.0),
-        OpenAIMutatorExpand(openai_model, temperature=1.0),
-        OpenAIMutatorGenerateSimilar(openai_model, temperature=0.5),
-        OpenAIMutatorRephrase(openai_model),
-        OpenAIMutatorShorten(openai_model)],
+        OpenAIMutatorCrossOver(mutate_model, temperature=0.0),
+        OpenAIMutatorExpand(mutate_model, temperature=1.0),
+        OpenAIMutatorGenerateSimilar(mutate_model, temperature=0.5),
+        OpenAIMutatorRephrase(mutate_model),
+        OpenAIMutatorShorten(mutate_model)],
         concatentate=True,
     ),
     select_policy=MCTSExploreSelectPolicy(),

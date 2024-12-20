@@ -1,11 +1,13 @@
 
+from huggingface_hub import InferenceClient
 from transformers import pipeline
 import openai
 import logging
 import time
 import concurrent.futures
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
-
+import replicate
+import os
 
 class LLM:
     def __init__(self):
@@ -70,9 +72,9 @@ class OpenAILLM(LLM):
                  ):
         super().__init__()
 
-        if model_path not in ['gpt-3.5-turbo', 'gpt-4-turbo']:
+        if model_path not in ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o']:
             raise ValueError(
-                'OpenAI model path should be gpt-3.5-turbo or gpt-4-turbo')
+                'OpenAI model path should be gpt-3.5-turbo or gpt-4-turbo or gpt-4o')
         openai.api_key = api_key
         self.model_path = model_path
         self.system_message = system_message if system_message is not None else "You are a helpful assistant."
@@ -106,8 +108,6 @@ class OpenAILLM(LLM):
                 results.extend(future.result())
         return results
 
-from huggingface_hub import InferenceClient
-
 
 class LlamaLLM(LLM):
     def __init__(self, model_path, api_key, system_message=None):
@@ -132,10 +132,46 @@ class LlamaLLM(LLM):
                 ]
 
                 # Call the generation pipeline
-                response = self.client.chat.completions.create( 
-                    model=self.model_path,messages=messages, max_tokens=max_tokens, temperature=temperature)
+                response = self.client.chat.completions.create(
+                    model=self.model_path, messages=messages, max_tokens=max_tokens, temperature=temperature)
                 # Assumes response contains 'generated_text'
                 return response.choices[0].message.content
+            except Exception as e:
+                logging.warning(f"Model generation failed: {
+                                e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # Return a default message if all retries fail
+        return "Failed to generate response."
+
+
+class ReplicateLLM(LLM):
+    def __init__(self, model_path, api_key, system_prompt=None):
+        super().__init__()
+        os.environ['REPLICATE_API_TOKEN'] = api_key
+        self.model_path = model_path
+        self.system_prompt = system_prompt if system_prompt is not None else "You are a helpful assistant."
+
+    def generate(self, prompt, temperature=0.7, max_tokens=512, max_trials=3, failure_sleep_time=5):
+        for attempt in range(max_trials):
+            try:
+                # Prepare the input message format
+                messages = {
+                    "top_p": 1,
+                    "system_prompt": self.system_prompt,
+                    "prompt": prompt,
+                    "temperature": temperature,
+                    "max_new_tokens": max_tokens,
+                    "min_new_tokens": -1
+                }
+                response = replicate.run(
+                    self.model_path,
+                    input=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature
+                )
+
+                return response
             except Exception as e:
                 logging.warning(f"Model generation failed: {
                                 e}. Retry {attempt + 1}/{max_trials}")
