@@ -12,6 +12,10 @@ from utils import get_data, convert_sample_to_prompt, add_color_to_text, OutOfQu
 import sqlite3
 import json
 from dotenv import load_dotenv
+from typing import Dict, List, Union
+from google.cloud import aiplatform
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
 from huggingface_hub import InferenceClient
 # Load environment variables from .env file
 load_dotenv()
@@ -112,12 +116,12 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
             response = chat_completion["choices"][0]["message"]["content"]
             # time.sleep(wait_time)  # Prevent hitting rate limits
 
-        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
+        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct", "meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf"]:
             client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
             completion = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                max_tokens=512,
+                max_tokens=2048,
             )
             response = completion.choices[0].message.content
         # Decode the response
@@ -154,6 +158,52 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
         #                  response}', toxicity='{toxicity_score}'")
 
         # return {"response": response, "toxicity_score": toxicity_score}
+
+    except openai.error.RateLimitError as e:
+        # Handle API rate limits or access issues
+        if "You exceeded your current quota, please check your plan and billing details" in e.user_message:
+            raise OutOfQuotaException(api_key)
+        elif "Your access was terminated due to violation of our policies" in e.user_message:
+            raise AccessTerminatedException(api_key)
+        else:
+            raise e
+
+def query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name="conversations.db"):
+
+    # Decode the user prompt
+    decoded_prompt = args.expert.decode(system_prompt)
+
+    try:
+        system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+        full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        instances = [
+                {
+                    "prompt": full_prompt,
+                    "n":1,
+                    "max_tokens": 1024,
+                }
+            ]
+        instances_proto = [
+            json_format.ParseDict(instance, Value()) for instance in instances
+        ]
+        response = client.predict(endpoint=endpoint, instances=instances_proto)
+        prediction_str = response.predictions[0]
+        output_index = prediction_str.find("Output:")
+        if output_index != -1:
+            output = prediction_str[output_index + len("Output:"):].strip()
+            response = output
+        
+        try:
+            decoded_response = args.expert.decode(response)
+        except Exception:
+            decoded_response = " "  # Handle undecipherable responses
+
+        toxicity_score = "Unknown"
+
+        # Save interaction to SQLite, including args
+        save_interaction_to_db(
+            args, prompt, decoded_prompt, response, decoded_response, toxicity_score, db_name
+        )
 
     except openai.error.RateLimitError as e:
         # Handle API rate limits or access issues
@@ -278,6 +328,17 @@ def main():
 
     total = len(samples)
     done_flag = [False for _ in range(total)]
+    if model_name in ["vicuna-7b-v1.5"]:
+        print("USING VICUNA")
+        project = os.getenv("VERTEX_PROJECT")
+        endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
+        location = os.getenv("VERTEX_LOCATION")
+        api_endpoint = f"{location}-aiplatform.googleapis.com"
+        client_options = {"api_endpoint": api_endpoint}
+        client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
+        endpoint = client.endpoint_path(project=project, location=location, endpoint=endpoint_id)
+
+    
     # results = [args]
     with tqdm(total=total) as pbar:
         pbar.update(len([0 for e in done_flag if e]))
@@ -292,8 +353,11 @@ def main():
 
                 try:
                     # send to LLMs and obtain the [query-response pair, toxic score]
-                    query_function(
-                        args, prompt, messages, model_name, db_name=saved_path)
+                    if model_name in ["vicuna-7b-v1.5"]:
+                        query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
+                    else:
+                        query_function(
+                            args, prompt, messages, model_name, db_name=saved_path)
                     # results.append(ans)
                     pbar.update(1)
                     # if pbar.n % save_epoch == 0:

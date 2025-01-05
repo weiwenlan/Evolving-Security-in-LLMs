@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from dotenv import load_dotenv
+import argparse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,7 +30,9 @@ def get_connection():
 model_names = ["meta-llama/Llama-3.1-8B-Instruct",
                "meta-llama/Llama-3.1-70B-Instruct",
                "gpt-3.5-turbo",
-               "gpt-4-turbo"]
+               "gpt-4-turbo",
+               "meta-llama/Llama-2-7b-chat-hf",
+               "meta-llama/Llama-2-70b-chat-hf"]
 
 
 # Create all necessary tables
@@ -136,6 +139,13 @@ def create_tables():
     conn.close()
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Create database and tables.")
+    parser.add_argument('--db-path', type=str, required=True, help='Path to the SQLite database file.')
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    create_tables()
+    args = parse_arguments()
+    create_tables(args.db_path)
     print("Database and all tables created successfully.")
