@@ -328,7 +328,10 @@ def main():
 
     total = len(samples)
     done_flag = [False for _ in range(total)]
-    if model_name in ["vicuna-7b-v1.5"]:
+
+    ##### Design For Vicuna Call vertex AI
+    ##### Making Long Connection
+    if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
         print("USING VICUNA")
         project = os.getenv("VERTEX_PROJECT")
         endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
@@ -353,7 +356,7 @@ def main():
 
                 try:
                     # send to LLMs and obtain the [query-response pair, toxic score]
-                    if model_name in ["vicuna-7b-v1.5"]:
+                    if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
                         query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
                     else:
                         query_function(
