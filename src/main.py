@@ -7,6 +7,9 @@ import anthropic
 import google.generativeai as genai
 from ratelimit import limits, sleep_and_retry
 from huggingface_hub import InferenceClient
+from google.cloud import aiplatform
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,6 +19,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+VERTEX_PROJECT = os.getenv("VERTEX_PROJECT")
+VERTEX_ENDPOINT_ID = os.getenv("VERTEX_ENDPOINT_ID")
+VERTEX_LOCATION = os.getenv("VERTEX_LOCATION")
 
 # Configure Google Generative AI
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -111,6 +117,37 @@ async def chat(request: ChatRequest):
                 max_tokens=max_tokens
             )
             return {"response": completion.choices[0].message.content}
+
+        elif model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+            api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
+            client_options = {"api_endpoint": api_endpoint}
+            client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
+            endpoint = client.endpoint_path(project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
+            system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+
+            full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+
+            instances = [
+                {
+                    "prompt": full_prompt,
+                    "n":1,
+                    "max_tokens": max_tokens,
+                }
+            ]
+            instances_proto = [
+                json_format.ParseDict(instance, Value()) for instance in instances
+            ]
+
+            response = client.predict(endpoint=endpoint, instances=instances_proto)
+            prediction_str = response.predictions[0]
+            output_index = prediction_str.find("Output:")
+            if output_index != -1:
+                output = prediction_str[output_index + len("Output:"):].strip()
+            else:
+                raise ValueError("Error: The response does not contain the expected 'Output:' keyword. Full response: "
+                                f"{prediction_str}")
+
+            return {"response": output}
 
         else:
             raise HTTPException(
