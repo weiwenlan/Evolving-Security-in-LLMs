@@ -20,13 +20,9 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 
 # Load OpenAI Model
-openai_model_path = 'gpt-3.5-turbo'
+openai_model_path = 'gpt-4-turbo'
 openai_model = OpenAILLM(
     openai_model_path, OPENAI_API_KEY)
-
-# Predictor model, we will add more predictor model in the future
-roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
-
 
 # Load Llama Model
 from gptfuzzer.llm import LlamaLLM
@@ -34,6 +30,22 @@ huggingface_model_path = "meta-llama/Llama-2-7b-chat-hf"
 huggingface_model = LlamaLLM(
     huggingface_model_path, HUGGINGFACE_API_KEY)
 
+
+from gptfuzzer.llm import VertexLLM
+project = os.getenv("VERTEX_PROJECT")
+endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
+location = os.getenv("VERTEX_LOCATION")
+vertex_model = VertexLLM(
+        model_path="vicuna-7b-v1.5",
+        project=project,
+        endpoint_id=endpoint_id,
+        location=location,
+        system_prompt="You are a helpful assistant."
+    )
+
+
+# Predictor model, we will add more predictor model in the future
+roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
 
 # jailbreak template dataset used in GPTFuzzer, we are now testing other datasets and will add new datasets in the future
 seed_path = 'datasets/prompts/GPTFuzzer.csv'
@@ -44,7 +56,7 @@ questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
 selected_questions = random.choices(questions_set, k=100)
 
 ### target model
-target_model = huggingface_model
+target_model = vertex_model
 mutate_model = openai_model
 fuzzer = GPTFuzzer(
     questions=selected_questions,
