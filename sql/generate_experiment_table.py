@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--db-path", required=True, help="Path to the SQLite database.")
 
     args = parser.parse_args()
-    db_path = args.db
+    db_path = args.db_path
     # Establish a database connection
     try:
         conn = sqlite3.connect(db_path)
