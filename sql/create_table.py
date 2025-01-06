@@ -12,32 +12,30 @@ db_path = os.getenv("DB_PATH")
 # Establish a connection to the database
 
 
-def get_connection():
+def get_connection(db_path):
     # Ensure the directory for the database file exists
-    if db_path and not os.path.exists(os.path.dirname(db_path)):
-        os.makedirs(os.path.dirname(db_path))
-
-    # If the database file does not exist, it will be created automatically
-    if not os.path.exists(db_path):
-        open(db_path, 'w').close()  # Create an empty file
+    if db_path and os.path.dirname(db_path):
+        if not os.path.exists(os.path.dirname(db_path)):
+            os.makedirs(os.path.dirname(db_path))
 
     return sqlite3.connect(db_path)
 
-
-# model_names = ["chatgpt-4o-latest", "gpt-4o-mini", "gpt-3.5-turbo", "gpt-4-turbo", "claude-3-5-sonnet-20241022", "claude-3-sonnet-20240229", "claude-3-5-haiku-20241022",
-#                "claude-3-haiku-20240307", "claude-3-opus-latest", "gemini-1.5-flash-8b-001", "gemini-1.5-flash-001", "gemini-1.5-pro-001"]
 
 model_names = ["meta-llama/Llama-3.1-8B-Instruct",
                "meta-llama/Llama-3.1-70B-Instruct",
                "gpt-3.5-turbo",
                "gpt-4-turbo",
                "meta-llama/Llama-2-7b-chat-hf",
-               "meta-llama/Llama-2-70b-chat-hf"]
+               "meta-llama/Llama-2-70b-chat-hf",
+               "vicuna-7b-v1.5",
+               "vicuna-13b-v1.5",
+               "vicuna-7b-v1.1",
+               "vicuna-13b-v1.1"]
 
 
 # Create all necessary tables
-def create_tables():
-    conn = get_connection()
+def create_tables(db_path):
+    conn = get_connection(db_path)
     cursor = conn.cursor()
 
     # Create attacked_requests table

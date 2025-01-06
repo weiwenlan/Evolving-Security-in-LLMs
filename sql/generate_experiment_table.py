@@ -75,7 +75,7 @@ import sqlite3
 if __name__ == "__main__":
     # Path to your SQLite database
     parser = argparse.ArgumentParser(description="Process rejected requests from a database.")
-    parser.add_argument("--db", required=True, help="Path to the SQLite database.")
+    parser.add_argument("--db-path", required=True, help="Path to the SQLite database.")
 
     args = parser.parse_args()
     db_path = args.db
