@@ -5,7 +5,7 @@ for i in "Ethics_And_Morality" \
          "Unfairness_And_Discrimination" 
 do
     python wenlan_main.py \
-        --model_name vicuna-7b-v1.5 \
+        --model_name vicuna-7b-v1.1 \
         --encode_method unchange \
         --instruction_type $i \
         --debug_num 40
