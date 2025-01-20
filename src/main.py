@@ -118,7 +118,7 @@ async def chat(request: ChatRequest):
             )
             return {"response": completion.choices[0].message.content}
 
-        elif model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+        elif model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5"]:
             api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
             client_options = {"api_endpoint": api_endpoint}
             client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
@@ -148,6 +148,31 @@ async def chat(request: ChatRequest):
                                 f"{prediction_str}")
 
             return {"response": output}
+        
+        elif model in ["vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+            api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
+            client_options = {"api_endpoint": api_endpoint}
+            client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
+            endpoint = client.endpoint_path(project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
+            system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+
+            full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+
+            instances = [
+                {
+                    "inputs": full_prompt,
+                    "parameters": {
+                        "max_tokens": max_tokens
+                    }
+                }
+            ]
+            instances_proto = [
+                json_format.ParseDict(instance, Value()) for instance in instances
+            ]
+
+            response = client.predict(endpoint=endpoint, instances=instances_proto)
+            prediction_str = response.predictions
+            return {"response": prediction_str[0]}
 
         else:
             raise HTTPException(

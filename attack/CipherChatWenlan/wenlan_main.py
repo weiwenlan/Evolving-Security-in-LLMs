@@ -215,6 +215,51 @@ def query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_nam
             raise e
 
 
+def query_function_vicunna_huggingface(args, prompt, system_prompt, client, endpoint, db_name="conversations.db"):
+
+    # Decode the user prompt
+    decoded_prompt = args.expert.decode(system_prompt)
+
+    try:
+        system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+        full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        instances = [
+        {
+                "inputs": full_prompt,
+                "parameters": {
+                    "max_tokens": 1024
+                }
+            }
+        ]
+        instances_proto = [
+            json_format.ParseDict(instance, Value()) for instance in instances
+        ]
+        response = client.predict(endpoint=endpoint, instances=instances_proto)
+        prediction_str = response.predictions
+        response = prediction_str[0]
+
+        try:
+            decoded_response = args.expert.decode(response)
+        except Exception:
+            decoded_response = " "  # Handle undecipherable responses
+
+        toxicity_score = "Unknown"
+
+        # Save interaction to SQLite, including args
+        save_interaction_to_db(
+            args, prompt, decoded_prompt, response, decoded_response, toxicity_score, db_name
+        )
+
+    except openai.error.RateLimitError as e:
+        # Handle API rate limits or access issues
+        if "You exceeded your current quota, please check your plan and billing details" in e.user_message:
+            raise OutOfQuotaException(api_key)
+        elif "Your access was terminated due to violation of our policies" in e.user_message:
+            raise AccessTerminatedException(api_key)
+        else:
+            raise e
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='The information about data, models and methods')
@@ -356,8 +401,10 @@ def main():
 
                 try:
                     # send to LLMs and obtain the [query-response pair, toxic score]
-                    if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+                    if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5"]:
                         query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
+                    elif model_name in ["vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+                        query_function_vicunna_huggingface(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
                     else:
                         query_function(
                             args, prompt, messages, model_name, db_name=saved_path)

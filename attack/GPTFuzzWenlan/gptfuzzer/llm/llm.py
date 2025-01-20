@@ -238,3 +238,54 @@ class VertexLLM:
 
         # 返回默认响应，如果所有尝试均失败
         return "Failed to generate response."
+
+class VertexHuggingFaceLLM:
+    def __init__(self, model_path, project, endpoint_id, location, system_prompt=None):
+
+        self.project = project
+        self.model_path = model_path
+        self.endpoint_id = endpoint_id
+        self.location = location
+        self.api_endpoint = f"{location}-aiplatform.googleapis.com"
+        self.client_options = {"api_endpoint": self.api_endpoint}
+        self.client = aiplatform.gapic.PredictionServiceClient(
+            client_options=self.client_options)
+        self.system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+
+    def generate(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+
+        # 构建完整的 Prompt
+        full_prompt = f"### Human: \n {
+            self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+
+        # 构建实例输入
+        instances = [
+            {
+                "inputs": full_prompt,
+                "parameters": {
+                    "max_tokens": max_tokens
+                }
+            }
+        ]
+        instances_proto = [
+            json_format.ParseDict(instance, Value()) for instance in instances
+        ]
+
+        # 获取 Endpoint 路径
+        endpoint = self.client.endpoint_path(
+            project=self.project, location=self.location, endpoint=self.endpoint_id)
+
+        # 调用模型并处理响应
+        for attempt in range(max_trials):
+            try:
+                response = self.client.predict(
+                    endpoint=endpoint, instances=instances_proto)
+                prediction_str = response.predictions
+                return prediction_str[0]
+            except Exception as e:
+                logging.warning(f"Vertex prediction failed: {
+                                e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # 返回默认响应，如果所有尝试均失败
+        return "Failed to generate response."
