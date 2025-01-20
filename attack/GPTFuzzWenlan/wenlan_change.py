@@ -31,18 +31,29 @@ huggingface_model = LlamaLLM(
     huggingface_model_path, HUGGINGFACE_API_KEY)
 
 
-from gptfuzzer.llm import VertexLLM
+# from gptfuzzer.llm import VertexLLM
+# project = os.getenv("VERTEX_PROJECT")
+# endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
+# location = os.getenv("VERTEX_LOCATION")
+# vertex_model = VertexLLM(
+#         model_path="vicuna-7b-v1.5",
+#         project=project,
+#         endpoint_id=endpoint_id,
+#         location=location,
+#         system_prompt="You are a helpful assistant."
+#     )
+
+from gptfuzzer.llm import VertexHuggingFaceLLM
 project = os.getenv("VERTEX_PROJECT")
 endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
 location = os.getenv("VERTEX_LOCATION")
-vertex_model = VertexLLM(
-        model_path="vicuna-7b-v1.5",
+vertex_huggingface_model = VertexHuggingFaceLLM(
+        model_path="vicuna-7b-v1.1",
         project=project,
         endpoint_id=endpoint_id,
         location=location,
         system_prompt="You are a helpful assistant."
     )
-
 
 # Predictor model, we will add more predictor model in the future
 roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
@@ -56,7 +67,7 @@ questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
 selected_questions = random.choices(questions_set, k=100)
 
 ### target model
-target_model = vertex_model
+target_model = vertex_huggingface_model
 mutate_model = openai_model
 fuzzer = GPTFuzzer(
     questions=selected_questions,

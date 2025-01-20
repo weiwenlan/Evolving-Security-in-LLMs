@@ -1,1 +1,1 @@
-from .llm import LLM, OpenAILLM, ClaudeLLM, LlamaLLM, VertexLLM
+from .llm import LLM, OpenAILLM, ClaudeLLM, LlamaLLM, VertexLLM, VertexHuggingFaceLLM
