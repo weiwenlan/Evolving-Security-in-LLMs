@@ -1,7 +1,0 @@
-*****Running Smooth-llm...
-smooth-llm is using llama model
-experiment database connection established.
-the total number of this experiment is  0
-Database connection closed.
----------------------------------
-0it [00:00, ?it/s]0it [00:00, ?it/s]

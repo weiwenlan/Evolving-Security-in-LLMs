@@ -6,7 +6,7 @@ from tqdm.auto import tqdm
 from dotenv import load_dotenv
 from fastchat.model import add_model_args
 from huggingface_hub import InferenceClient
-from urllib3.exceptions import NotOpenSSLWarning
+# from urllib3.exceptions import NotOpenSSLWarning
 
 from helpers.model_configs import *
 from helpers.get_experiment_tools import *
@@ -14,8 +14,6 @@ load_dotenv()
 
 ######################## random config ########################
 # https://huggingface.co/meta-llama/Llama-Guard-3-8B
-# ignore all the warnings 
-warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
 
 # example_messages = [
 # 	{
