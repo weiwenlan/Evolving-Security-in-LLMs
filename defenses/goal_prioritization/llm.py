@@ -7,6 +7,9 @@ import time
 import concurrent.futures
 from huggingface_hub import InferenceClient
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from google.cloud import aiplatform
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
 
 class LLM:
     def __init__(self):
@@ -130,3 +133,107 @@ class LlamaLLM(LLM):
         # Return a default message if all retries fail
         return "Failed to generate response."
 
+
+class VertexLLM:
+    def __init__(self, target_model, system_prompt=None):
+
+        self.project = os.getenv("VERTEX_PROJECT")
+        # self.model_path = model_path
+        self.endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
+        self.location = os.getenv("VERTEX_LOCATION")
+        self.api_endpoint = f"{self.location}-aiplatform.googleapis.com"
+        self.client_options = {"api_endpoint": self.api_endpoint}
+        self.client = aiplatform.gapic.PredictionServiceClient(
+            client_options=self.client_options)
+        self.system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+
+        # make sure that is the model we want to use.
+        assert target_model == os.getenv("VERTEX_MODEL")
+
+    def __call__(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+
+        # 构建完整的 Prompt
+        full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+
+        # 构建实例输入
+        instances = [
+            {
+                "prompt": full_prompt,
+                "n": n,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+        ]
+        instances_proto = [
+            json_format.ParseDict(instance, Value()) for instance in instances
+        ]
+
+        # 获取 Endpoint 路径
+        endpoint = self.client.endpoint_path(
+            project=self.project, location=self.location, endpoint=self.endpoint_id)
+
+        # 调用模型并处理响应
+        for attempt in range(max_trials):
+            try:
+                response = self.client.predict(
+                    endpoint=endpoint, instances=instances_proto)
+                prediction_str = response.predictions[0]
+                output_index = prediction_str.find("Output:")
+                if output_index != -1:
+                    return prediction_str[output_index + len("Output:"):].strip()
+                return prediction_str.strip()
+            except Exception as e:
+                logging.warning(f"Vertex prediction failed: {e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # 返回默认响应，如果所有尝试均失败
+        return "Failed to generate response."
+
+class VertexHuggingFaceLLM:
+    def __init__(self, model_path, project, endpoint_id, location, system_prompt=None):
+
+        self.project = project
+        self.model_path = model_path
+        self.endpoint_id = endpoint_id
+        self.location = location
+        self.api_endpoint = f"{location}-aiplatform.googleapis.com"
+        self.client_options = {"api_endpoint": self.api_endpoint}
+        self.client = aiplatform.gapic.PredictionServiceClient(
+            client_options=self.client_options)
+        self.system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
+
+    def generate(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+
+        # 构建完整的 Prompt
+        full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+
+        # 构建实例输入
+        instances = [
+            {
+                "inputs": full_prompt,
+                "parameters": {
+                    "max_tokens": max_tokens
+                }
+            }
+        ]
+        instances_proto = [
+            json_format.ParseDict(instance, Value()) for instance in instances
+        ]
+
+        # 获取 Endpoint 路径
+        endpoint = self.client.endpoint_path(
+            project=self.project, location=self.location, endpoint=self.endpoint_id)
+
+        # 调用模型并处理响应
+        for attempt in range(max_trials):
+            try:
+                response = self.client.predict(
+                    endpoint=endpoint, instances=instances_proto)
+                prediction_str = response.predictions
+                return prediction_str[0]
+            except Exception as e:
+                logging.warning(f"Vertex prediction failed: {e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # 返回默认响应，如果所有尝试均失败
+        return "Failed to generate response."

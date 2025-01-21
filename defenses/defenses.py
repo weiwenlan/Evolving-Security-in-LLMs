@@ -32,15 +32,15 @@ if __name__ == "__main__":
     parser.add_argument(
         '--target_model',
         type=str,
-        default='llama31-8b',
-        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo'],
+        default='vicuna13b15',
+        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo', 'vicuna7b15', 'vicuna13b15', 'vicuna7b11', 'vicuna13b11', 'llama2-70b', 'llama2-7b'],
         help='Specify the target model to run with.'
     )
 
     parser.add_argument(
         "--db_path", 
         type=str,
-        default="/Users/austins/Adversarial-Attacks-on-LLM/sql/austin.db",
+        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/austin.db",
         help="Path to the experiments database."
     )
 
