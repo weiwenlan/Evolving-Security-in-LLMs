@@ -11,7 +11,7 @@ import smooth_llm.lib.perturbations as perturbations
 import smooth_llm.lib.defenses as defenses
 import smooth_llm.lib.attacks as attacks
 import smooth_llm.lib.language_models as language_models
-from smooth_llm.lib.llm import LlamaLLM, OpenAILLM
+from smooth_llm.lib.llm import * 
 
 from helpers.model_configs import *
 from helpers.get_experiment_tools import *
@@ -28,13 +28,18 @@ def main(args):
     
     # step 1: Instantiate the targeted LLM
     target_model = args.target_model
-    huggingface_model_path=MODELS[target_model]['model_path']
+    
     if 'llama' in args.target_model:
         print('smooth-llm is using llama model')
+        huggingface_model_path=MODELS[target_model]['model_path']
         model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
     elif 'gpt' in args.target_model:
         print('smooth-llm is using gpt model')
+        huggingface_model_path=MODELS[target_model]['model_path']
         model = OpenAILLM(huggingface_model_path, os.getenv("OPENAI_API_KEY"))
+    elif 'vicuna' in args.target_model:
+        print('smooth-llm is using vicuna model')
+        model = VertexLLM(args.target_model)
 
     # step 2: Create attack instance, used to create prompts
     attack = vars(attacks)['General'](
