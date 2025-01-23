@@ -59,6 +59,7 @@ def is_json_serializable(value):
     except (TypeError, OverflowError):
         return False
 
+
 def save_interaction_to_db(args, prompt, decoded_prompt, response, decoded_response, toxicity_score, db_name="conversations.db"):
     """
     Save a single interaction (prompt, response, and toxicity score) to the database along with args.
@@ -66,7 +67,8 @@ def save_interaction_to_db(args, prompt, decoded_prompt, response, decoded_respo
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
-    serializable_args = {k: v for k, v in vars(args).items() if is_json_serializable(v)}
+    serializable_args = {k: v for k, v in vars(
+        args).items() if is_json_serializable(v)}
 
     # Convert the filtered args to JSON
     args_json = json.dumps(serializable_args)
@@ -116,10 +118,18 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
             response = chat_completion["choices"][0]["message"]["content"]
             # time.sleep(wait_time)  # Prevent hitting rate limits
 
-        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct", "meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf"]:
+        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct", "meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Mistral-Nemo-Instruct-2407"]:
             client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
             completion = client.chat.completions.create(
                 model=model_name,
+                messages=messages,
+                max_tokens=2048,
+            )
+            response = completion.choices[0].message.content
+        elif model_name in ["mistralai/Mistral-7B-Instruct-v0.1"]:
+            client = InferenceClient(base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/",
+                                     api_key="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")
+            completion = client.chat.completions.create(
                 messages=messages,
                 max_tokens=2048,
             )
@@ -168,6 +178,7 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
         else:
             raise e
 
+
 def query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name="conversations.db"):
 
     # Decode the user prompt
@@ -175,14 +186,15 @@ def query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_nam
 
     try:
         system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
-        full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        full_prompt = f"### Human: \n {
+            system_prompt} \n Question:{prompt}\n### Assistant: \n"
         instances = [
-                {
-                    "prompt": full_prompt,
-                    "n":1,
-                    "max_tokens": 1024,
-                }
-            ]
+            {
+                "prompt": full_prompt,
+                "n": 1,
+                "max_tokens": 1024,
+            }
+        ]
         instances_proto = [
             json_format.ParseDict(instance, Value()) for instance in instances
         ]
@@ -192,7 +204,7 @@ def query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_nam
         if output_index != -1:
             output = prediction_str[output_index + len("Output:"):].strip()
             response = output
-        
+
         try:
             decoded_response = args.expert.decode(response)
         except Exception:
@@ -222,9 +234,10 @@ def query_function_vicunna_huggingface(args, prompt, system_prompt, client, endp
 
     try:
         system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
-        full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        full_prompt = f"### Human: \n {
+            system_prompt} \n Question:{prompt}\n### Assistant: \n"
         instances = [
-        {
+            {
                 "inputs": full_prompt,
                 "parameters": {
                     "max_tokens": 1024
@@ -310,7 +323,6 @@ def main():
     saved_path = "saved_results/{}_results.db".format(attribution)
     initialize_database(db_name=saved_path)
 
-
     current_time = time.strftime(
         '%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
     logger = logging.getLogger("log")
@@ -339,7 +351,8 @@ def main():
     if args.debug:
         args.logger.info("🌞🌞🌞DEBUG MODE")
 
-        samples = random.sample(samples, args.debug_num) if args.debug_num and args.debug_num < len(samples) else samples
+        samples = random.sample(
+            samples, args.debug_num) if args.debug_num and args.debug_num < len(samples) else samples
 
     for k, v in sorted(vars(args).items()):
         args.logger.info(str(k) + ":" + str(v))
@@ -374,8 +387,8 @@ def main():
     total = len(samples)
     done_flag = [False for _ in range(total)]
 
-    ##### Design For Vicuna Call vertex AI
-    ##### Making Long Connection
+    # Design For Vicuna Call vertex AI
+    # Making Long Connection
     if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
         print("USING VICUNA")
         project = os.getenv("VERTEX_PROJECT")
@@ -383,10 +396,11 @@ def main():
         location = os.getenv("VERTEX_LOCATION")
         api_endpoint = f"{location}-aiplatform.googleapis.com"
         client_options = {"api_endpoint": api_endpoint}
-        client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
-        endpoint = client.endpoint_path(project=project, location=location, endpoint=endpoint_id)
+        client = aiplatform.gapic.PredictionServiceClient(
+            client_options=client_options)
+        endpoint = client.endpoint_path(
+            project=project, location=location, endpoint=endpoint_id)
 
-    
     # results = [args]
     with tqdm(total=total) as pbar:
         pbar.update(len([0 for e in done_flag if e]))
@@ -402,9 +416,11 @@ def main():
                 try:
                     # send to LLMs and obtain the [query-response pair, toxic score]
                     if model_name in ["vicuna-7b-v1.5", "vicuna-13b-v1.5"]:
-                        query_function_vicunna(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
+                        query_function_vicunna(
+                            args, prompt, system_prompt, client, endpoint, db_name=saved_path)
                     elif model_name in ["vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
-                        query_function_vicunna_huggingface(args, prompt, system_prompt, client, endpoint, db_name=saved_path)
+                        query_function_vicunna_huggingface(
+                            args, prompt, system_prompt, client, endpoint, db_name=saved_path)
                     else:
                         query_function(
                             args, prompt, messages, model_name, db_name=saved_path)

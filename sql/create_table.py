@@ -30,7 +30,11 @@ model_names = ["meta-llama/Llama-3.1-8B-Instruct",
                "vicuna-7b-v1.5",
                "vicuna-13b-v1.5",
                "vicuna-7b-v1.1",
-               "vicuna-13b-v1.1"]
+               "vicuna-13b-v1.1",
+               "mistralai/Mistral-7B-Instruct-v0.1",
+               "mistralai/Mistral-7B-Instruct-v0.2",
+               "mistralai/Mistral-7B-Instruct-v0.3",
+               "mistralai/Mistral-Nemo-Instruct-2407"]
 
 
 # Create all necessary tables

@@ -1,15 +1,15 @@
 import pandas as pd
-from gptfuzzer.llm import OpenAILLM
+from gptfuzzer.llm import OpenAILLM, LlamaLLM, VertexHuggingFaceLLM, MistralLLM
 from gptfuzzer.utils.predict import RoBERTaPredictor
 from gptfuzzer.fuzzer.selection import MCTSExploreSelectPolicy
 from gptfuzzer.fuzzer.mutator import (
     MutateRandomSinglePolicy, OpenAIMutatorCrossOver, OpenAIMutatorExpand,
     OpenAIMutatorGenerateSimilar, OpenAIMutatorRephrase, OpenAIMutatorShorten)
 from gptfuzzer.fuzzer import GPTFuzzer
-import random
-
 from dotenv import load_dotenv
 import os
+import random
+import argparse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,58 +17,61 @@ load_dotenv()
 # Load API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+PROJECT = os.getenv("VERTEX_PROJECT")
+ENDPOINT_ID = os.getenv("VERTEX_ENDPOINT_ID")
+LOCATION = os.getenv("VERTEX_LOCATION")
 
+# Command-line argument parsing
+parser = argparse.ArgumentParser(
+    description="Run GPTFuzzer with specified model")
+parser.add_argument("--model", type=str, required=True,
+                    help="Specify the model to use")
+args = parser.parse_args()
 
-# Load OpenAI Model
-openai_model_path = 'gpt-4-turbo'
-openai_model = OpenAILLM(
-    openai_model_path, OPENAI_API_KEY)
+# Initialize the target model based on the --model argument
+if args.model in ["gpt-3.5-turbo", "gpt-4-turbo"]:
+    print("Initializing OpenAI model...")
+    target_model = OpenAILLM(args.model, OPENAI_API_KEY)
 
-# Load Llama Model
-from gptfuzzer.llm import LlamaLLM
-huggingface_model_path = "meta-llama/Llama-2-7b-chat-hf"
-huggingface_model = LlamaLLM(
-    huggingface_model_path, HUGGINGFACE_API_KEY)
+elif args.model in ["meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf", "meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
+    print("Initializing Llama model...")
+    target_model = LlamaLLM(args.model, HUGGINGFACE_API_KEY)
 
+elif args.model in ["mistralai/Mistral-7B-Instruct-v0.1", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Mistral-Nemo-Instruct-2407"]:
+    print("Initializing Mistral model...")
+    if args.model == "mistralai/Mistral-7B-Instruct-v0.1":
+        target_model = MistralLLM(
+            model_path=args.model, base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/", api_key="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")
+    else:
+        target_model = MistralLLM(
+            model_path=args.model, api_key=HUGGINGFACE_API_KEY)
 
-# from gptfuzzer.llm import VertexLLM
-# project = os.getenv("VERTEX_PROJECT")
-# endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
-# location = os.getenv("VERTEX_LOCATION")
-# vertex_model = VertexLLM(
-#         model_path="vicuna-7b-v1.5",
-#         project=project,
-#         endpoint_id=endpoint_id,
-#         location=location,
-#         system_prompt="You are a helpful assistant."
-#     )
-
-from gptfuzzer.llm import VertexHuggingFaceLLM
-project = os.getenv("VERTEX_PROJECT")
-endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
-location = os.getenv("VERTEX_LOCATION")
-vertex_huggingface_model = VertexHuggingFaceLLM(
-        model_path="vicuna-7b-v1.1",
-        project=project,
-        endpoint_id=endpoint_id,
-        location=location,
+elif args.model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+    print("Initializing Vertex HuggingFace model...")
+    target_model = VertexHuggingFaceLLM(
+        model_path=args.model,
+        project=PROJECT,
+        endpoint_id=ENDPOINT_ID,
+        location=LOCATION,
         system_prompt="You are a helpful assistant."
     )
+else:
+    raise ValueError(f"Invalid model selection: {args.model}")
 
-# Predictor model, we will add more predictor model in the future
+# Assuming OpenAI model for mutation
+mutate_model = OpenAILLM("gpt-4-turbo", OPENAI_API_KEY)
+# Predictor model
 roberta_model = RoBERTaPredictor('hubert233/GPTFuzz', device='mps')
 
-# jailbreak template dataset used in GPTFuzzer, we are now testing other datasets and will add new datasets in the future
+# Load datasets
 seed_path = 'datasets/prompts/GPTFuzzer.csv'
 initial_seed = pd.read_csv(seed_path)['text'].tolist()
 
 question_path = 'datasets/questions/question_list.csv'
-questions_set = pd.read_csv(question_path)['text'].tolist()  # 100 questions
+questions_set = pd.read_csv(question_path)['text'].tolist()
 selected_questions = random.choices(questions_set, k=100)
 
-### target model
-target_model = vertex_huggingface_model
-mutate_model = openai_model
+# Initialize GPTFuzzer
 fuzzer = GPTFuzzer(
     questions=selected_questions,
     initial_seed=initial_seed,
@@ -86,8 +89,8 @@ fuzzer = GPTFuzzer(
     energy=1,
     max_jailbreak=100,
     max_query=500,
-    rate_limit= 10,
+    rate_limit=10,
 )
 
-
+# Run the fuzzer
 fuzzer.run()

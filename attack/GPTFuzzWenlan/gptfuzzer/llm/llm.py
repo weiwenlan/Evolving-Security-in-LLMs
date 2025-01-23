@@ -289,3 +289,46 @@ class VertexHuggingFaceLLM:
 
         # 返回默认响应，如果所有尝试均失败
         return "Failed to generate response."
+    
+class MistralLLM:
+    def __init__(self, model_path=None, base_url=None, system_message=None, api_key=None):
+
+        self.model_path = model_path
+        self.base_url = base_url
+        self.system_message = system_message if system_message is not None else "You are a helpful assistant."
+        try:
+            if self.model_path not in ["mistralai/Mistral-7B-Instruct-v0.1"]:
+                self.client = InferenceClient(
+                    model=self.model_path,
+                    api_key=api_key)
+            else:
+                self.client = InferenceClient(
+                    base_url=self.base_url,
+                    api_key=api_key)
+        except Exception as e:
+            raise ValueError(f"Failed to load model {model_path}. Error: {e}")
+
+    def generate(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+
+        for attempt in range(max_trials):
+            try:
+
+                # Prepare the input message format
+                messages = [
+                    {"role": "system", "content": self.system_message},
+                    {"role": "user", "content": prompt},
+                ]
+
+                # Call the generation pipeline
+                response = self.client.chat.completions.create( 
+                    messages=messages, 
+                    max_tokens=max_tokens, 
+                    temperature=temperature)
+                # Assumes response contains 'generated_text'
+                return response.choices[0].message.content
+            except Exception as e:
+                logging.warning(f"Model generation failed: {e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # Return a default message if all retries fail
+        return "Failed to generate response."

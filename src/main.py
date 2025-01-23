@@ -118,19 +118,51 @@ async def chat(request: ChatRequest):
             )
             return {"response": completion.choices[0].message.content}
 
-        elif model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5"]:
+        elif model in ["mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Mistral-Nemo-Instruct-2407"]:
+            client = InferenceClient(
+                model=model, api_key=HUGGINGFACE_API_KEY)
+            system_prompt = "You are a helpful assistant."
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=max_tokens
+            )
+            return {"response": completion.choices[0].message.content}
+        
+        elif model in ["mistralai/Mistral-7B-Instruct-v0.1"]:
+            client = InferenceClient(
+                base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/", 
+                api_key="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")
+            system_prompt = "You are a helpful assistant."
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=max_tokens
+            )
+            return {"response": completion.choices[0].message.content}
+
+        elif model in ["vicuna-13b-v1.5"]:
             api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
             client_options = {"api_endpoint": api_endpoint}
-            client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
-            endpoint = client.endpoint_path(project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
+            client = aiplatform.gapic.PredictionServiceClient(
+                client_options=client_options)
+            endpoint = client.endpoint_path(
+                project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
             system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
 
-            full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+            full_prompt = f"### Human: \n {
+                system_prompt} \n Question:{prompt}\n### Assistant: \n"
 
             instances = [
                 {
                     "prompt": full_prompt,
-                    "n":1,
+                    "n": 1,
                     "max_tokens": max_tokens,
                 }
             ]
@@ -138,25 +170,29 @@ async def chat(request: ChatRequest):
                 json_format.ParseDict(instance, Value()) for instance in instances
             ]
 
-            response = client.predict(endpoint=endpoint, instances=instances_proto)
+            response = client.predict(
+                endpoint=endpoint, instances=instances_proto)
             prediction_str = response.predictions[0]
             output_index = prediction_str.find("Output:")
             if output_index != -1:
                 output = prediction_str[output_index + len("Output:"):].strip()
             else:
                 raise ValueError("Error: The response does not contain the expected 'Output:' keyword. Full response: "
-                                f"{prediction_str}")
+                                 f"{prediction_str}")
 
             return {"response": output}
-        
-        elif model in ["vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
+
+        elif model in ["vicuna-7b-v1.1", "vicuna-13b-v1.1", "vicuna-7b-v1.5"]:
             api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
             client_options = {"api_endpoint": api_endpoint}
-            client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
-            endpoint = client.endpoint_path(project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
+            client = aiplatform.gapic.PredictionServiceClient(
+                client_options=client_options)
+            endpoint = client.endpoint_path(
+                project=VERTEX_PROJECT, location=VERTEX_LOCATION, endpoint=VERTEX_ENDPOINT_ID)
             system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
 
-            full_prompt = f"### Human: \n {system_prompt} \n Question:{prompt}\n### Assistant: \n"
+            full_prompt = f"### Human: \n {
+                system_prompt} \n Question:{prompt}\n### Assistant: \n"
 
             instances = [
                 {
@@ -170,7 +206,8 @@ async def chat(request: ChatRequest):
                 json_format.ParseDict(instance, Value()) for instance in instances
             ]
 
-            response = client.predict(endpoint=endpoint, instances=instances_proto)
+            response = client.predict(
+                endpoint=endpoint, instances=instances_proto)
             prediction_str = response.predictions
             return {"response": prediction_str[0]}
 
