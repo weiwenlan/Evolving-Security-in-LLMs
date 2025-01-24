@@ -1,9 +1,11 @@
 # methods=("smooth_llm" "goal_prioritization" "llama_guard") 
-methods=("goal_prioritization") 
+methods=("llama_guard") 
+
 db_paths=(
-    "/Users/austins/Adversarial-Attacks-on-LLM/data/500/austin.db"
+   "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-02/jailbroken_mistral_7b_v0.2_chat_requests_500.db"
 )
-target_model='vicuna13b15'
+
+target_model='mistral7b-02'
 
 for method in "${methods[@]}"; do
   echo "Starting method: $method"
