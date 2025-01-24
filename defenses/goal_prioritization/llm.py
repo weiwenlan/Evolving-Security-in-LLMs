@@ -150,10 +150,11 @@ class VertexLLM:
         # make sure that is the model we want to use.
         assert target_model == os.getenv("VERTEX_MODEL")
 
-    def __call__(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+    def __call__(self, prompt, max_tokens=2048, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
 
         # 构建完整的 Prompt
-        full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        # full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        full_prompt = f"<System>\n{self.system_prompt}\n\n<User>\n{prompt}\n\n<Assistant>\n"
 
         # 构建实例输入
         instances = [
@@ -190,22 +191,26 @@ class VertexLLM:
         return "Failed to generate response."
 
 class VertexHuggingFaceLLM:
-    def __init__(self, model_path, project, endpoint_id, location, system_prompt=None):
+    def __init__(self, target_model, system_prompt=None):
 
-        self.project = project
-        self.model_path = model_path
-        self.endpoint_id = endpoint_id
-        self.location = location
-        self.api_endpoint = f"{location}-aiplatform.googleapis.com"
+        self.project = os.getenv("VERTEX_PROJECT")
+        # self.model_path = model_path
+        self.endpoint_id = os.getenv("VERTEX_ENDPOINT_ID")
+        self.location = os.getenv("VERTEX_LOCATION")
+        self.api_endpoint = f"{self.location}-aiplatform.googleapis.com"
         self.client_options = {"api_endpoint": self.api_endpoint}
         self.client = aiplatform.gapic.PredictionServiceClient(
             client_options=self.client_options)
         self.system_prompt = system_prompt if system_prompt else "You are a helpful assistant."
 
-    def generate(self, prompt, max_tokens=1024, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
+        # make sure that is the model we want to use.
+        assert target_model == os.getenv("VERTEX_MODEL")
+
+    def __call__(self, prompt, max_tokens=2048, temperature=0.7, n=1, max_trials=3, failure_sleep_time=5):
 
         # 构建完整的 Prompt
-        full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        # full_prompt = f"### Human: \n {self.system_prompt} \n Question:{prompt}\n### Assistant: \n"
+        full_prompt = f"<System>\n{self.system_prompt}\n\n<User>\n{prompt}\n\n<Assistant>\n"
 
         # 构建实例输入
         instances = [
@@ -229,6 +234,7 @@ class VertexHuggingFaceLLM:
             try:
                 response = self.client.predict(
                     endpoint=endpoint, instances=instances_proto)
+                print(response)
                 prediction_str = response.predictions
                 return prediction_str[0]
             except Exception as e:
@@ -236,4 +242,69 @@ class VertexHuggingFaceLLM:
                 time.sleep(failure_sleep_time)
 
         # 返回默认响应，如果所有尝试均失败
+        return "Failed to generate response."
+
+class MistralLLM(LLM):
+    """
+    A class for interacting with the Mistral AI model. can be both inference api or inference endpoint
+    """
+    def __init__(self, model_path=None, base_url=None, system_message=None):
+        """
+
+        """
+        super().__init__()
+        self.model_path = model_path
+        self.base_url = base_url
+        self.system_message = system_message if system_message is not None else "You are a helpful assistant."
+        # warning: base_url won't work if model is set, https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client
+        try:
+            if self.model_path: # when using inference api, like mistral nemo/v0.2/v0.3
+                print("using mistral model: ", self.model_path)
+                self.client = InferenceClient(
+                    model=self.model_path,
+                    api_key=os.getenv("HUGGINGFACE_API_KEY"))
+            elif not self.model_path and self.base_url: # for mistral v0.1 
+                print("using mistral v01 model: ", self.base_url)
+                self.client = InferenceClient(
+                    base_url=self.base_url,
+                    api_key=os.getenv("HUGGINGFACE_API_KEY"))
+        except Exception as e:
+            raise ValueError(f"Failed to load model {model_path}. Error: {e}")
+
+    # def __call__(self, batch, max_new_tokens=100):
+    def __call__(self, prompt, temperature=0.7, max_tokens=1024, max_trials=3, failure_sleep_time=5):
+        """
+        Generate text using the remote LLaMA-3 model.
+
+        Args:
+            prompt (str): The user input.
+            temperature (float): Sampling temperature for generation diversity.
+            max_tokens (int): Maximum number of tokens to generate.
+            max_trials (int): Number of retries on failure.
+            failure_sleep_time (int): Seconds to wait between retries.
+
+        Returns:
+            str: The generated response or a failure message.
+        """
+        for attempt in range(max_trials):
+            try:
+
+                # Prepare the input message format
+                messages = [
+                    {"role": "system", "content": self.system_message},
+                    {"role": "user", "content": prompt},
+                ]
+
+                # Call the generation pipeline
+                response = self.client.chat.completions.create( 
+                    messages=messages, 
+                    max_tokens=max_tokens, 
+                    temperature=temperature)
+                # Assumes response contains 'generated_text'
+                return response.choices[0].message.content
+            except Exception as e:
+                logging.warning(f"Model generation failed: {e}. Retry {attempt + 1}/{max_trials}")
+                time.sleep(failure_sleep_time)
+
+        # Return a default message if all retries fail
         return "Failed to generate response."

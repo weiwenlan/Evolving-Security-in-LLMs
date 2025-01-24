@@ -29,10 +29,24 @@ def main(args):
         huggingface_model_path = model_configs.MODELS[args.target_model]['model_path']
         model_with_system_prompt = OpenAILLM(huggingface_model_path, OPENAI_API_KEY, system_prompt)
     elif 'vicuna' in args.target_model:
-        print('vicuna model')
+        if "11" in args.target_model:
+            print('vicuna v1.1 model')
+            print('system prompt:', system_prompt)
+            # model_no_system_prompt = VertexHuggingFaceLLM(args.target_model)
+            model_with_system_prompt = VertexHuggingFaceLLM(args.target_model, system_prompt)
+        if "15" in args.target_model:
+            print('vicuna v1.5 model')
+            print('system prompt:', system_prompt)
+            # model_no_system_prompt = VertexLLM(args.target_model)
+            model_with_system_prompt = VertexLLM(args.target_model, system_prompt)
+    elif 'mistral' in args.target_model:
         print('system prompt:', system_prompt)
-        # model_no_system_prompt = VertexLLM(args.target_model)
-        model_with_system_prompt = VertexLLM(args.target_model, system_prompt)
+        if '01' not in args.target_model:
+            # model_no_system_prompt = MistralLLM(args.target_model)
+            model_with_system_prompt = MistralLLM(model_path=model_configs.MODELS[args.target_model]['model_path'], system_message=system_prompt)
+        else:
+            # model_no_system_prompt = MistralHuggingFaceLLM(args.target_model)
+            model_with_system_prompt = MistralLLM(base_url=model_configs.MODELS[args.target_model]['base_url'], system_message=system_prompt)
 
     # step 2: Get the attack prompts
     attack_prompts = get_experiments(args.db_path, args.defense_method)

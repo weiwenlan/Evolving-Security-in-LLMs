@@ -13,5 +13,17 @@ MODELS = {
     },
     'gpt-4-turbo':{
         'model_path': 'gpt-4-turbo'
+    },
+    'mistral7b-01' : {
+        'base_url': 'https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/'
+    }
+    'mistral7b-02': {
+        'model_path': 'mistralai/Mistral-7B-Instruct-v0.2'
+    },
+    'mistral7b-03': {
+        'model_path': 'mistralai/Mistral-7B-Instruct-v0.3'
+    },
+    'mistral12b-nemo': {
+        'model_path': 'mistralai/Mistral-12B-Nemo-Instruct'
     }
 }
