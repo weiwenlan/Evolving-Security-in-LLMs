@@ -21,26 +21,25 @@ def run_all(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="all LLM-related defenses.")
-    
     parser.add_argument(
         '--defense_method', 
         type = str,
-        default = 'smooth_llm',
+        default = 'null',
         choices = ['goal_prioritization', 'llama_guard', 'smooth_llm'],
         help = 'Specify the defense method to run with.'
     )
     parser.add_argument(
         '--target_model',
         type=str,
-        default='vicuna13b15',
-        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo', 'vicuna7b15', 'vicuna13b15', 'vicuna7b11', 'vicuna13b11', 'llama2-70b', 'llama2-7b'],
+        default='null',
+        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo', 'vicuna7b15', 'vicuna13b15', 'vicuna7b11', 'vicuna13b11', 'llama2-70b', 'llama2-7b', 'mistral7b-01', 'mistral7b-02', 'mistral7b-03', 'mistral12b-nemo'],
         help='Specify the target model to run with.'
     )
 
     parser.add_argument(
         "--db_path", 
         type=str,
-        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/austin.db",
+        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/austin.db",
         help="Path to the experiments database."
     )
 

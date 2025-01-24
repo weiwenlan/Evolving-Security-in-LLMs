@@ -40,6 +40,12 @@ def main(args):
     elif 'vicuna' in args.target_model:
         print('smooth-llm is using vicuna model')
         model = VertexLLM(args.target_model)
+    elif 'mistral' in args.target_model:
+        print('smooth-llm is using mistral model')
+        if "01" in args.target_model: # for mistral 01
+            model = MistralLLM(base_url=MODELS[target_model]['base_url'])
+        else:  # for mistral 02 03 nemo
+            model = MistralLLM(model_path=MODELS[target_model]['model_path'])
 
     # step 2: Create attack instance, used to create prompts
     attack = vars(attacks)['General'](
