@@ -32,14 +32,14 @@ if __name__ == "__main__":
         '--target_model',
         type=str,
         default='null',
-        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo', 'vicuna7b15', 'vicuna13b15', 'vicuna7b11', 'vicuna13b11', 'llama2-70b', 'llama2-7b', 'mistral7b-01', 'mistral7b-02', 'mistral7b-03', 'mistral12b-nemo'],
+        choices=['llama31-8b', 'llama31-70b', 'gpt-3.5-turbo', 'gpt-4-turbo', 'vicuna7b15', 'vicuna13b15', 'vicuna7b11', 'vicuna13b11', 'llama2-70b-hf', 'llama2-7b-hf', 'mistral7b-01', 'mistral7b-02', 'mistral7b-03', 'mistral12b-nemo'],
         help='Specify the target model to run with.'
     )
 
     parser.add_argument(
         "--db_path", 
         type=str,
-        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/austin.db",
+        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/jailbroken_llama2_70b_chat_requests_500.db",
         help="Path to the experiments database."
     )
 

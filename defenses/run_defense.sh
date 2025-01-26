@@ -1,11 +1,15 @@
-# methods=("smooth_llm" "goal_prioritization" "llama_guard") 
-methods=("llama_guard") 
+methods=("smooth_llm" "goal_prioritization" "llama_guard") 
+# methods=("smooth_llm") 
 
 db_paths=(
-   "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-02/jailbroken_mistral_7b_v0.2_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03/cipherChat_mistral_7b_v0.3_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03/gptFuzz_mistral_7b_v0.3_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03/jailbroken_mistralai_mistral_7b_instruct_v0.3_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03/renellm_mistralai_mistral_7b_instruct_v0.3_chat_requests_500.db"
 )
 
-target_model='mistral7b-02'
+
+target_model='mistral7b-03'
 
 for method in "${methods[@]}"; do
   echo "Starting method: $method"
