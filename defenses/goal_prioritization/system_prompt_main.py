@@ -21,8 +21,12 @@ def main(args):
     if 'llama' in args.target_model:
         print('llama model')
         print('system prompt:', system_prompt)
-        huggingface_model_path = model_configs.MODELS[args.target_model]['model_path']
-        model_with_system_prompt = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"), system_prompt)
+        if "llama3" in args.target_model:
+            huggingface_model_path = model_configs.MODELS[args.target_model]['model_path']
+            model_with_system_prompt = LlamaLLM(model_path=huggingface_model_path, system_message=system_prompt)
+        elif 'llama2' in args.target_model:
+            huggingface_base_url = model_configs.MODELS[args.target_model]['base_url']
+            model_with_system_prompt = LlamaLLM(base_url=huggingface_base_url, system_message=system_prompt)
     elif 'gpt' in args.target_model:
         print('gpt model')
         print('system prompt:', system_prompt)
