@@ -6,10 +6,11 @@ MODELS = {
         'model_path': 'meta-llama/Meta-Llama-3.1-70B-Instruct'
     },
     'llama2-7b-hf': {
-        'base_url': 'xxx'
+        'base_url': 'https://xx2ybczv1763hu0w.us-east-1.aws.endpoints.huggingface.cloud/v1/'
     },
     'llama2-70b-hf': {
-        'base_url': ''
+        'base_url': 'https://nea56n613wvkx3ck.us-east-1.aws.endpoints.huggingface.cloud/v1/'
+    },
     'llama-guard-3-8b':{
         'model_path': 'meta-llama/Llama-Guard-3-8B'
     },
