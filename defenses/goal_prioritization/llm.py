@@ -73,7 +73,7 @@ class LlamaLLM(LLM):
     """
     LlamaLLM class for using a remote LLaMA-3 model via API.
     """
-    def __init__(self, model_path, api_key, system_message=None):
+    def __init__(self, model_path=None, base_url=None, system_message=None):
         """
         Initialize the LlamaLLM with API configuration.
         
@@ -84,18 +84,27 @@ class LlamaLLM(LLM):
         """
         super().__init__()
         self.model_path = model_path
-        # self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.base_url = base_url
         self.system_message = system_message if system_message is not None else "You are a helpful assistant."
-        # self.llama = pipeline("text-generation", model=model_path)
 
         # Initialize the text generation pipeline
         try:
-            self.client = InferenceClient(api_key=os.getenv("HUGGINGFACE_API_KEY"))
+            if self.model_path: # when using inference api, like llama3.1 7b 70b
+                print("using llama3.1 model: ", self.model_path)
+                self.client = InferenceClient(
+                    model=self.model_path,
+                    api_key=os.getenv("HUGGINGFACE_API_KEY"))
+            elif not self.model_path and self.base_url: # for llama2 7b hf, llama2 70b hf
+                print("using llama2 model: ", self.base_url)
+                self.client = InferenceClient(
+                    base_url=self.base_url,
+                    api_key=os.getenv("HUGGINGFACE_API_KEY"))
+
         except Exception as e:
             raise ValueError(f"Failed to load model {model_path}. Error: {e}")
 
     # def __call__(self, batch, max_new_tokens=100):
-    def __call__(self, prompt, temperature=0.7, max_tokens=512, max_trials=3, failure_sleep_time=5):
+    def __call__(self, prompt, temperature=0.7, max_tokens=1024, max_trials=3, failure_sleep_time=5):
         """
         Generate text using the remote LLaMA-3 model.
 
@@ -120,7 +129,6 @@ class LlamaLLM(LLM):
 
                 # Call the generation pipeline
                 response = self.client.chat.completions.create( 
-                    model=self.model_path,
                     messages=messages, 
                     max_tokens=max_tokens, 
                     temperature=temperature)
