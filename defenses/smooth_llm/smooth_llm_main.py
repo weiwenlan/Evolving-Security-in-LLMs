@@ -30,9 +30,14 @@ def main(args):
     target_model = args.target_model
     
     if 'llama' in args.target_model:
-        print('smooth-llm is using llama model')
-        huggingface_model_path=MODELS[target_model]['model_path']
-        model = LlamaLLM(huggingface_model_path, os.getenv("HUGGINGFACE_API_KEY"))
+        if 'llama3' in args.target_model:
+            print('smooth-llm is using llama3 model')
+            huggingface_model_path=MODELS[target_model]['model_path']
+            model = LlamaLLM(model_path=huggingface_model_path)
+        elif 'llama2' in args.target_model:
+            print('smooth-llm is using llama2 model')
+            huggingface_base_url=MODELS[target_model]['base_url']
+            model = LlamaLLM(base_url=huggingface_base_url)
     elif 'gpt' in args.target_model:
         print('smooth-llm is using gpt model')
         huggingface_model_path=MODELS[target_model]['model_path']
