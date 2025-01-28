@@ -80,7 +80,7 @@ def gather_experiment_result_by_attack_id(experiment_result):
         attack_asr[key] = sum(value)/len(value)
 
     for key, value in defense_dict.items():
-        print(value)
+        print(key, len(value))
         defense_asr[key] = sum(value)/len(value)
 
     return attack_asr, defense_asr
@@ -139,7 +139,9 @@ def main(args):
                     line['defensed_result'] = 'defensed'
                 elif line['defensed_response'] == 'safe' or line['defensed_response'] == 'safeassistant':
                     line['defensed_result'] = 'attacked' if line['attacked_result'] == 'attacked' else 'defensed'
-
+                else: 
+                    line['defensed_result'] = 'no_answer'
+                
             # step 2.9: update the result to the database   
             line['evaluate_status'] = 'completed'
             experiment_table.update_result(line)
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--evaluation_model',
         type=str,
-        default='gpt-4o',
+        default='gpt-4o-mini',
         choices=['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
         help='Specify the chatgpt evaluation model to run with.'
     )
@@ -176,21 +178,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--db_path", 
         type=str,
-        default="/Users/austins/Adversarial-Attacks-on-LLM/",
+        default="/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-01/cipherChat_mistral_7b_v0.1_chat_requests_500.db",
         help="Path to the experiments database."
     )
 
     parser.add_argument(
         '--label_evaluation',
         type=str,
-        default=['yes'],
+        default='no',
         help='Whether to get the metrics of the evaluation.'
     )
 
     parser.add_argument(
         '--get_metrics',
         type=str,
-        default=['yes'],
+        default='yes',
         help='Whether to get the metrics of the evaluation.'
     )
 
