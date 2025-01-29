@@ -33,7 +33,7 @@ if args.model in ["gpt-3.5-turbo", "gpt-4-turbo"]:
     print("Initializing OpenAI model...")
     target_model = OpenAILLM(args.model, OPENAI_API_KEY)
 
-elif args.model in ["meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf", "meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
+elif args.model in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
     print("Initializing Llama model...")
     target_model = LlamaLLM(args.model, HUGGINGFACE_API_KEY)
 
@@ -45,6 +45,19 @@ elif args.model in ["mistralai/Mistral-7B-Instruct-v0.1", "mistralai/Mistral-7B-
     else:
         target_model = MistralLLM(
             model_path=args.model, api_key=HUGGINGFACE_API_KEY)
+# 70b
+elif args.model in ["meta-llama/Llama-2-70b-chat-hf"]:
+    print("Initializing Llama2 70b model...")
+    if args.model == "meta-llama/Llama-2-70b-chat-hf":
+        target_model = MistralLLM(
+            model_path=args.model, base_url="https://n4n0kr7wcvxpxqcd.us-east-1.aws.endpoints.huggingface.cloud", api_key=HUGGINGFACE_API_KEY)
+
+#7b
+elif args.model in ["meta-llama/Llama-2-7b-chat-hf"]:
+    print("Initializing Llama2 7b model...")
+    if args.model == "meta-llama/Llama-2-7b-chat-hf":
+        target_model = MistralLLM(
+            model_path=args.model, base_url="https://p8yfz1xw82n5xy0u.us-east-1.aws.endpoints.huggingface.cloud", api_key=HUGGINGFACE_API_KEY)
 
 elif args.model in ["vicuna-7b-v1.5", "vicuna-13b-v1.5", "vicuna-7b-v1.1", "vicuna-13b-v1.1"]:
     print("Initializing Vertex HuggingFace model...")
@@ -69,7 +82,7 @@ initial_seed = pd.read_csv(seed_path)['text'].tolist()
 
 question_path = 'datasets/questions/question_list.csv'
 questions_set = pd.read_csv(question_path)['text'].tolist()
-selected_questions = random.choices(questions_set, k=100)
+selected_questions = random.choices(questions_set, k=20)
 
 # Initialize GPTFuzzer
 fuzzer = GPTFuzzer(
@@ -78,17 +91,17 @@ fuzzer = GPTFuzzer(
     target=target_model,
     predictor=roberta_model,
     mutate_policy=MutateRandomSinglePolicy([
-        OpenAIMutatorCrossOver(mutate_model, temperature=0.0),
+        OpenAIMutatorCrossOver(mutate_model, temperature=1.0),
         OpenAIMutatorExpand(mutate_model, temperature=1.0),
-        OpenAIMutatorGenerateSimilar(mutate_model, temperature=0.5),
-        OpenAIMutatorRephrase(mutate_model),
-        OpenAIMutatorShorten(mutate_model)],
+        OpenAIMutatorGenerateSimilar(mutate_model, temperature=1.0),
+        OpenAIMutatorRephrase(mutate_model, temperature=1.0),
+        OpenAIMutatorShorten(mutate_model, temperature=1.0)],
         concatentate=True,
     ),
     select_policy=MCTSExploreSelectPolicy(),
     energy=1,
     max_jailbreak=100,
-    max_query=500,
+    max_query=200,
     rate_limit=10,
 )
 
