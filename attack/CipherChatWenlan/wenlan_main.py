@@ -118,7 +118,7 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
             response = chat_completion["choices"][0]["message"]["content"]
             # time.sleep(wait_time)  # Prevent hitting rate limits
 
-        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct", "meta-llama/Llama-2-7b-chat-hf", "meta-llama/Llama-2-70b-chat-hf", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Mistral-Nemo-Instruct-2407"]:
+        elif model_name in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct", "mistralai/Mistral-7B-Instruct-v0.2", "mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Mistral-Nemo-Instruct-2407"]:
             client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
             completion = client.chat.completions.create(
                 model=model_name,
@@ -129,6 +129,24 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
         elif model_name in ["mistralai/Mistral-7B-Instruct-v0.1"]:
             client = InferenceClient(base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/",
                                      api_key="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")
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=2048,
+            )
+            response = completion.choices[0].message.content
+        
+        elif model_name in ["meta-llama/Llama-2-7b-chat-hf"]:
+            client = InferenceClient(base_url="",
+                                     api_key=HUGGINGFACE_API_KEY)
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=2048,
+            )
+            response = completion.choices[0].message.content
+
+        elif model_name in ["meta-llama/Llama-2-70b-chat-hf"]:
+            client = InferenceClient(base_url="",
+                                     api_key=HUGGINGFACE_API_KEY)
             completion = client.chat.completions.create(
                 messages=messages,
                 max_tokens=2048,
