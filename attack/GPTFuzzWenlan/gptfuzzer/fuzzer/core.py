@@ -11,11 +11,12 @@ if TYPE_CHECKING:
 from gptfuzzer.llm import LLM
 from gptfuzzer.utils.predict import Predictor
 from gptfuzzer.utils.template import synthesis_message
-
+from tqdm import tqdm
 
 
 import sqlite3
 import os
+
 
 class SQLiteHandler:
     def __init__(self, db_path="chat_responses.db"):
@@ -61,7 +62,8 @@ class SQLiteHandler:
             ValueError: If `responses` and `results` lists have different lengths.
         """
         if len(responses) != len(results):
-            raise ValueError("The length of `responses` and `results` must match.")
+            raise ValueError(
+                "The length of `responses` and `results` must match.")
 
         connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
@@ -78,8 +80,6 @@ class SQLiteHandler:
         connection.commit()
         connection.close()
         print(f"Inserted {len(responses)} rows into chat_responses.")
-
-
 
 
 class PromptNode:
@@ -171,11 +171,12 @@ class GPTFuzzer:
 
         self.energy: int = energy
         self.rate_limit: int = rate_limit
-        
+
         if result_file is None:
-            prefix = f'results-{self.target.model_path.split("/")[-1]}-{time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())}'
+            prefix = f'results-{self.target.model_path.split(
+                "/")[-1]}-{time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())}'
             result_file = prefix + ".csv"
-            self.db_handler = SQLiteHandler(prefix + ".db") 
+            self.db_handler = SQLiteHandler(prefix + ".db")
         self.raw_fp = open(result_file, 'w', buffering=1)
         self.writter = csv.writer(self.raw_fp)
         self.writter.writerow(
@@ -203,13 +204,48 @@ class GPTFuzzer:
 
     def run(self):
         logging.info("Fuzzing started!")
+        num = 0
         try:
             while not self.is_stop():
+                iteration_start_time = time.time()
+                print("*"*10)
+                print(f"The number of requests now is {num}")
+
+                # Step 1
+                step1_start = time.time()
                 seed = self.select_policy.select()
+                step1_end = time.time()
+                print(f"[Timing] Step 1 (select): {
+                      step1_end - step1_start:.6f}s")
+
+                # Step 2: mutate
+                step2_start = time.time()
                 mutated_results = self.mutate_policy.mutate_single(seed)
+                step2_end = time.time()
+                print(f"[Timing] Step 2 (mutate): {
+                      step2_end - step2_start:.6f}s")
+
+                # Step 3: evaluate
+                step3_start = time.time()
                 self.evaluate(mutated_results)
+                step3_end = time.time()
+                print(f"[Timing] Step 3 (evaluate): {
+                      step3_end - step3_start:.6f}s")
+
+                # Step 4: update
+                step4_start = time.time()
                 self.update(mutated_results)
+                step4_end = time.time()
                 self.log()
+                print(f"[Timing] Step 4 (update): {
+                      step4_end - step4_start:.6f}s")
+
+                iteration_end_time = time.time()
+                num += 1
+                # 打印每一步的耗时
+                print(f"[Timing] Total iteration time: {
+                      iteration_end_time - iteration_start_time:.6f}s\n")
+
         except KeyboardInterrupt:
             logging.info("Fuzzing interrupted by user!")
 
@@ -220,7 +256,7 @@ class GPTFuzzer:
         for prompt_node in prompt_nodes:
             responses = []
             messages = []
-            for question in self.questions:
+            for question in tqdm(self.questions, desc="Processing questions"):
                 message = synthesis_message(question, prompt_node.prompt)
                 if message is None:  # The prompt is not valid
                     prompt_node.response = []
@@ -261,7 +297,6 @@ class GPTFuzzer:
 # Initialize the database handler
 
 # Replace CSV write with database insertion
-
 
         self.select_policy.update(prompt_nodes)
 

@@ -147,6 +147,36 @@ async def chat(request: ChatRequest):
             )
             return {"response": completion.choices[0].message.content}
 
+        elif model in ["meta-llama/Llama-2-70b-chat-hf"]:
+            client = InferenceClient(
+                base_url="https://n4n0kr7wcvxpxqcd.us-east-1.aws.endpoints.huggingface.cloud", 
+                api_key=HUGGINGFACE_API_KEY)
+            system_prompt = "You are a helpful assistant."
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=max_tokens
+            )
+            return {"response": completion.choices[0].message.content}
+        
+        elif model in ["meta-llama/Llama-2-7b-chat-hf"]:
+            client = InferenceClient(
+                base_url="https://p8yfz1xw82n5xy0u.us-east-1.aws.endpoints.huggingface.cloud", 
+                api_key=HUGGINGFACE_API_KEY)
+            system_prompt = "You are a helpful assistant."
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            completion = client.chat.completions.create(
+                messages=messages,
+                max_tokens=max_tokens
+            )
+            return {"response": completion.choices[0].message.content}
+
         elif model in ["vicuna-13b-v1.5"]:
             api_endpoint = f"{VERTEX_LOCATION}-aiplatform.googleapis.com"
             client_options = {"api_endpoint": api_endpoint}
