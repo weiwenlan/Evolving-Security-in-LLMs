@@ -2,10 +2,10 @@
 
 # Define the evaluation models and database paths
 db_paths=(
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-7b/cipherChat_llama2_7b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-7b/gptFuzz_llama2_7b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-7b/jailbroken_llama2_7b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-7b/reNeLLM_llama2_7b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/cipherChat_llama2_70b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/gptFuzz_llama2_70b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/jailbroken_llama2_70b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/reNeLLM_llama2_70b_chat_requests_500.db"
 )
 
 evaluation_model="gpt-4o-mini"
