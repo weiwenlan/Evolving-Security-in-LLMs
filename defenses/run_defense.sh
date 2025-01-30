@@ -1,8 +1,7 @@
-methods=("smooth_llm" "goal_prioritization" "llama_guard") 
-# methods=("smooth_llm") 
+methods=("llama_guard") 
 
 db_paths=(
-
+ "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/gptFuzz_llama2_70b_chat_requests_500.db"
 )
 
 
