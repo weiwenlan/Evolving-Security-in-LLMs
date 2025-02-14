@@ -10,5 +10,8 @@ DEFENSES = {
     },
     "smooth_llm": {
         "number": 4,
+    },
+    "smooth_llm_goal": {
+        "number": 5,
     }
 }
