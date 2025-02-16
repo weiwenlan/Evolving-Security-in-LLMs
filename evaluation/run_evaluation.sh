@@ -2,10 +2,8 @@
 
 # Define the evaluation models and database paths
 db_paths=(
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/cipherChat_llama2_70b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/gptFuzz_llama2_70b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/jailbroken_llama2_70b_chat_requests_500.db"
-  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/llama2-70b/reNeLLM_llama2_70b_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03 hybrid/gptFuzz_mistral_7b_v0.3_chat_requests_500.db"
+  "/Users/austins/Adversarial-Attacks-on-LLM/data/500/evaluated/mistral-03 hybrid/renellm_mistralai_mistral_7b_instruct_v0.3_chat_requests_500.db"
 )
 
 evaluation_model="gpt-4o-mini"
@@ -16,7 +14,7 @@ get_metrics='yes'
 for db_path in "${db_paths[@]}"; do
   db_name=$(basename "$db_path")
   output_file="${db_name}_label_output.txt"
-  nohup python gpt_label.py \
+  nohup python gpt_label_with_llama_guard.py \
     --evaluation_model "$evaluation_model" \
     --db_path "$db_path" \
     --label_evaluation "$label_evaluation" \
