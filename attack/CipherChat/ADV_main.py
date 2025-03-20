@@ -126,6 +126,14 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
                 max_tokens=2048,
             )
             response = completion.choices[0].message.content
+        elif model_name in ["meta-llama/Llama-3.1-405B-Instruct"]:
+            client = InferenceClient(provider="sambanova",api_key=HUGGINGFACE_API_KEY)
+            completion = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                max_tokens=2048,
+            )
+            response = completion.choices[0].message.content
         elif model_name in ["mistralai/Mistral-7B-Instruct-v0.1"]:
             client = InferenceClient(base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/",
                                      api_key="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")

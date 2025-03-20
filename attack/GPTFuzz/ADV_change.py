@@ -33,7 +33,7 @@ if args.model in ["gpt-3.5-turbo", "gpt-4-turbo"]:
     print("Initializing OpenAI model...")
     target_model = OpenAILLM(args.model, OPENAI_API_KEY)
 
-elif args.model in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"]:
+elif args.model in ["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct","meta-llama/Llama-3.1-405B-Instruct"]:
     print("Initializing Llama model...")
     target_model = LlamaLLM(args.model, HUGGINGFACE_API_KEY)
 
@@ -101,7 +101,7 @@ fuzzer = GPTFuzzer(
     select_policy=MCTSExploreSelectPolicy(),
     energy=1,
     max_jailbreak=100,
-    max_query=200,
+    max_query=100,
     rate_limit=10,
 )
 

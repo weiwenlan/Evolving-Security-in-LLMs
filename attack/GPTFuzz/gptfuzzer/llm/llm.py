@@ -121,10 +121,13 @@ class LlamaLLM(LLM):
         self.system_message = system_message if system_message is not None else "You are a helpful assistant."
 
         # Initialize the text generation pipeline
-        try:
-            self.client = InferenceClient(api_key=api_key)
-        except Exception as e:
-            raise ValueError(f"Failed to load model {model_path}. Error: {e}")
+        if model_path in ["meta-llama/Llama-3.1-405B-Instruct"]:
+            self.client = InferenceClient(provider="sambanova",api_key=api_key)
+        else:
+            try:
+                self.client = InferenceClient(api_key=api_key)
+            except Exception as e:
+                raise ValueError(f"Failed to load model {model_path}. Error: {e}")
 
     def generate(self, prompt, temperature=0.7, max_tokens=512, max_trials=3, failure_sleep_time=5):
         for attempt in range(max_trials):
