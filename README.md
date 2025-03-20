@@ -73,92 +73,89 @@ sqlite3 attacks.db -header -csv "SELECT * FROM Attacks;" > attacks_data.csv
 sqlite3 attacks.db .dump > attacks_backup.sql
 
 ```
+### 1. `chat_requests` Table
+
+This table stores chat request information, including the model name, prompt input, status, response, and the category of the related method.
+
+| Field Name        | Data Type | Description                                        |
+| ----------------- | -------- | -------------------------------------------------- |
+| `id`             | INTEGER  | Primary key, auto-incremented                      |
+| `model_name`     | TEXT     | Model name, referencing `model_name` in the `Models` table |
+| `prompt_input`   | TEXT     | The content of the prompt to be sent              |
+| `status`         | TEXT     | Request status (e.g., `pending`, `completed`)      |
+| `response`       | TEXT     | Model's response                                  |
+| `method_used`    | TEXT     | Method name, referencing `paper_name` in the `Attacks` table |
+| `method_category`| TEXT     | Method category, referencing `attack_category` in the `Attacks` table |
+| `answer_category`| TEXT     | Category of the model response (e.g., `good`, `bad`) |
 
 ---
 
-### 1. `chat_requests` 表
+### 2. `Attacks` Table
 
-此表用于存储聊天请求信息，包括模型名称、提示输入、状态、响应以及相关方法的类别信息。
+This table stores information about attack methods. The `attack_prompt` field will serve as the `prompt_input`, `paper_name` will be used as `method_used`, and `attack_category` as `method_category`.
 
-| 字段名            | 数据类型 | 描述                                              |
-| ----------------- | -------- | ------------------------------------------------- |
-| `id`              | INTEGER  | 主键，自增                                        |
-| `model_name`      | TEXT     | 模型名称，引用 `Models` 表中的 `model_name`       |
-| `prompt_input`    | TEXT     | 要发送的 `prompt` 内容                            |
-| `status`          | TEXT     | 请求的状态（如 `pending`, `completed`）           |
-| `response`        | TEXT     | 模型的回复                                        |
-| `method_used`     | TEXT     | 方法名称，引用 `Attacks` 表中的 `paper_name`      |
-| `method_category` | TEXT     | 方法类别，引用 `Attacks` 表中的 `attack_category` |
-| `answer_category` | TEXT     | 模型回复的类别（如 `good`, `bad`）                |
+| Field Name        | Data Type | Description                                  |
+| ----------------- | -------- | -------------------------------------------- |
+| `id`             | INTEGER  | Primary key, auto-incremented                |
+| `paper_name`     | TEXT     | Name of the method, used as `method_used`    |
+| `attack_category`| TEXT     | Category of the method, used as `method_category` |
+| `attack_prompt`  | TEXT     | Content to be used as `prompt_input`         |
 
 ---
 
-### 2. `Attacks` 表
+### 3. `Defenses` Table
 
-此表用于存储攻击方法的信息，`attack_prompt` 字段将作为 `prompt_input`，`paper_name` 用于 `method_used`，`attack_category` 用于 `method_category`。
+This table stores information about defense methods, with each record describing a defensive measure.
 
-| 字段名            | 数据类型 | 描述                               |
-| ----------------- | -------- | ---------------------------------- |
-| `id`              | INTEGER  | 主键，自增                         |
-| `paper_name`      | TEXT     | 方法的名称，作为 `method_used`     |
-| `attack_category` | TEXT     | 方法的类别，作为 `method_category` |
-| `attack_prompt`   | TEXT     | 要作为 `prompt_input` 的内容       |
-
----
-
-### 3. `Defenses` 表
-
-此表用于存储防御方法的信息，每条记录描述一种防御措施。
-
-| 字段名        | 数据类型 | 描述                                                        |
-| ------------- | -------- | ----------------------------------------------------------- |
-| `id`          | INTEGER  | 主键，自增                                                  |
-| `name`        | TEXT     | 防御方法的名称                                              |
-| `category`    | TEXT     | 防御方法的类别（如 `Self-Processing`, `Additional Helper`） |
-| `description` | TEXT     | 防御方法的详细描述                                          |
+| Field Name   | Data Type | Description                                               |
+| ------------ | -------- | --------------------------------------------------------- |
+| `id`        | INTEGER  | Primary key, auto-incremented                             |
+| `name`      | TEXT     | Name of the defense method                                |
+| `category`  | TEXT     | Category of the defense method (e.g., `Self-Processing`, `Additional Helper`) |
+| `description` | TEXT   | Detailed description of the defense method               |
 
 ---
 
-### 4. `Models` 表
+### 4. `Models` Table
 
-此表用于存储模型的信息，包括名称、API 端点和参数。`model_name` 与 `chat_requests` 表的 `model_name` 一致。
+This table stores model information, including name, API endpoint, and parameters. `model_name` matches the `model_name` in the `chat_requests` table.
 
-| 字段名       | 数据类型 | 描述                                               |
-| ------------ | -------- | -------------------------------------------------- |
-| `id`         | INTEGER  | 主键，自增                                         |
-| `model_name` | TEXT     | 模型名称，引用 `chat_requests` 表中的 `model_name` |
-| `endpoint`   | TEXT     | 模型的 API 端点                                    |
-| `parameters` | TEXT     | 模型参数（如 `temperature`、`max_tokens` 等）      |
-
----
-
-### 5. `Experiments` 表
-
-此表用于记录每次实验的详细信息，包含模型、攻击方法和防御方法的组合以及实验的成功率和效率。
-
-| 字段名         | 数据类型 | 描述                              |
-| -------------- | -------- | --------------------------------- |
-| `id`           | INTEGER  | 主键，自增                        |
-| `model_id`     | INTEGER  | 模型的 ID，引用 `Models` 表       |
-| `attack_id`    | INTEGER  | 攻击方法的 ID，引用 `Attacks` 表  |
-| `defense_id`   | INTEGER  | 防御方法的 ID，引用 `Defenses` 表 |
-| `success_rate` | REAL     | 攻击的成功率                      |
-| `efficiency`   | REAL     | 效率分数                          |
-| `date`         | TEXT     | 实验日期                          |
-| `notes`        | TEXT     | 实验的备注                        |
+| Field Name   | Data Type | Description                                       |
+| ------------ | -------- | ------------------------------------------------- |
+| `id`        | INTEGER  | Primary key, auto-incremented                     |
+| `model_name` | TEXT     | Model name, referencing `model_name` in `chat_requests` |
+| `endpoint`   | TEXT     | API endpoint of the model                        |
+| `parameters` | TEXT     | Model parameters (e.g., `temperature`, `max_tokens`, etc.) |
 
 ---
 
-### 6. `Results` 表
+### 5. `Experiments` Table
 
-此表用于存储实验的具体结果细节，每条记录描述实验的某一类别和成功情况。
+This table records details of each experiment, including the combination of models, attack methods, and defense methods, as well as the experiment’s success rate and efficiency.
 
-| 字段名          | 数据类型 | 描述                                                    |
-| --------------- | -------- | ------------------------------------------------------- |
-| `id`            | INTEGER  | 主键，自增                                              |
-| `experiment_id` | INTEGER  | 实验的 ID，引用 `Experiments` 表                        |
-| `category`      | TEXT     | 实验结果的类别（如 `harmful_content`, `adult_content`） |
-| `success`       | BOOLEAN  | 是否成功                                                |
-| `count`         | INTEGER  | 成功案例的数量                                          |
+| Field Name     | Data Type | Description                            |
+| ------------- | -------- | -------------------------------------- |
+| `id`         | INTEGER  | Primary key, auto-incremented         |
+| `model_id`   | INTEGER  | Model ID, referencing `Models` table  |
+| `attack_id`  | INTEGER  | Attack method ID, referencing `Attacks` table |
+| `defense_id` | INTEGER  | Defense method ID, referencing `Defenses` table |
+| `success_rate` | REAL   | Success rate of the attack            |
+| `efficiency`  | REAL    | Efficiency score                      |
+| `date`       | TEXT     | Experiment date                       |
+| `notes`      | TEXT     | Experiment notes                      |
+
+---
+
+### 6. `Results` Table
+
+This table stores details of specific experimental results, with each record describing the category and success of an experiment.
+
+| Field Name      | Data Type | Description                                              |
+| -------------- | -------- | -------------------------------------------------------- |
+| `id`          | INTEGER  | Primary key, auto-incremented                            |
+| `experiment_id` | INTEGER | Experiment ID, referencing `Experiments` table         |
+| `category`    | TEXT     | Category of experiment results (e.g., `harmful_content`, `adult_content`) |
+| `success`     | BOOLEAN  | Whether the experiment was successful                   |
+| `count`       | INTEGER  | Number of successful cases                              |
 
 ---
