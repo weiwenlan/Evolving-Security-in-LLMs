@@ -41,7 +41,7 @@ elif args.model in ["mistralai/Mistral-7B-Instruct-v0.1", "mistralai/Mistral-7B-
     print("Initializing Mistral model...")
     if args.model == "mistralai/Mistral-7B-Instruct-v0.1":
         target_model = MistralLLM(
-            model_path=args.model, base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/", api_key="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")
+            model_path=args.model, base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/", api_key="")
     else:
         target_model = MistralLLM(
             model_path=args.model, api_key=HUGGINGFACE_API_KEY)

@@ -135,8 +135,8 @@ def query_function(args, prompt, messages, model_name, db_name="conversations.db
             )
             response = completion.choices[0].message.content
         elif model_name in ["mistralai/Mistral-7B-Instruct-v0.1"]:
-            client = InferenceClient(base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/",
-                                     api_key="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")
+            client = InferenceClient(base_url="",
+                                     api_key="")
             completion = client.chat.completions.create(
                 messages=messages,
                 max_tokens=2048,
