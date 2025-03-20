@@ -135,7 +135,7 @@ async def chat(request: ChatRequest):
         elif model in ["mistralai/Mistral-7B-Instruct-v0.1"]:
             client = InferenceClient(
                 base_url="https://qhh7ky18tucco2by.us-east-1.aws.endpoints.huggingface.cloud/v1/", 
-                api_key="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")
+                api_key="")
             system_prompt = "You are a helpful assistant."
             messages = [
                 {"role": "system", "content": system_prompt},
