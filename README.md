@@ -1,6 +1,10 @@
-# Adversarial-Attacks-on-LLM
+# Evolving Security in LLMs
 
-# Architect
+Code and experimental materials for **Evolving Security in LLMs: A Study of Jailbreak Attacks and Defenses**.
+
+Paper: [IEEE Xplore](https://ieeexplore.ieee.org/document/11467846)
+
+# Architecture
 
 ![Architect](image/architect.png)
 
